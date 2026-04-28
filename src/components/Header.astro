@@ -1,0 +1,15 @@
+---
+const nav = [
+  { href: '/', label: 'blog' },
+  { href: '/archive/', label: 'archive' },
+  { href: '/about/', label: 'about' },
+  { href: '/rss.xml', label: 'rss' },
+];
+---
+
+<header class="site-header">
+  <p class="site-title"><a href="/">thoughts</a></p>
+  <nav class="site-nav" aria-label="Primary navigation">
+    {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+  </nav>
+</header>

@@ -1,0 +1,23 @@
+---
+type Props = {
+  currentPage: number;
+  lastPage: number;
+  basePath?: string;
+};
+
+const { currentPage, lastPage, basePath = '/page' } = Astro.props;
+const previousUrl = currentPage === 2 ? '/' : `${basePath}/${currentPage - 1}/`;
+const nextUrl = `${basePath}/${currentPage + 1}/`;
+---
+
+{
+  lastPage > 1 && (
+    <nav class="pagination" aria-label="Post pages">
+      {currentPage > 1 ? <a href={previousUrl}>← Newer</a> : <span>← Newer</span>}
+      <span aria-current="page">
+        Page {currentPage} of {lastPage}
+      </span>
+      {currentPage < lastPage ? <a href={nextUrl}>Older →</a> : <span>Older →</span>}
+    </nav>
+  )
+}

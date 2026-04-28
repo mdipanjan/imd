@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: '2-digit',
+  }).format(date);
+
+const postsByYear = posts.reduce<Record<string, typeof posts>>((years, post) => {
+  const year = String(post.data.date.getFullYear());
+  years[year] = years[year] ?? [];
+  years[year].push(post);
+  return years;
+}, {});
+---
+
+<BaseLayout title="Archive" description="All posts grouped by year.">
+  <h1>Archive</h1>
+  <p class="muted">All posts, newest first.</p>
+
+  <div class="archive-list">
+    {
+      Object.entries(postsByYear).map(([year, yearPosts]) => (
+        <section class="archive-year" aria-labelledby={`year-${year}`}>
+          <h2 id={`year-${year}`}>{year}</h2>
+          <ol>
+            {yearPosts.map((post) => (
+              <li>
+                <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+                <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))
+    }
+  </div>
+</BaseLayout>

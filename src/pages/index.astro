@@ -1,0 +1,27 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostList from '../components/PostList.astro';
+import Pagination from '../components/Pagination.astro';
+
+const POSTS_PER_PAGE = 8;
+
+const posts = (await getCollection('posts'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<BaseLayout description="A small personal blog about software, systems, and life.">
+  <section>
+    <h1>thoughts</h1>
+    <p class="muted">
+      A small personal blog. Mostly notes on software, systems, and things worth remembering.
+    </p>
+  </section>
+
+  <section aria-labelledby="recent-posts">
+    <h2 id="recent-posts">Recent posts</h2>
+    <PostList posts={posts.slice(0, POSTS_PER_PAGE)} />
+    <Pagination currentPage={1} lastPage={Math.ceil(posts.length / POSTS_PER_PAGE)} />
+  </section>
+</BaseLayout>

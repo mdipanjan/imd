@@ -1,0 +1,48 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostList from '../../components/PostList.astro';
+import Pagination from '../../components/Pagination.astro';
+
+type PageProps = {
+  page: {
+    currentPage: number;
+    lastPage: number;
+    data: CollectionEntry<'posts'>[];
+  };
+};
+
+export async function getStaticPaths() {
+  const postsPerPage = 8;
+  const posts = (await getCollection('posts'))
+    .filter((post) => !post.data.draft)
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+  const lastPage = Math.ceil(posts.length / postsPerPage);
+  const paths = [];
+
+  for (let currentPage = 2; currentPage <= lastPage; currentPage += 1) {
+    const start = (currentPage - 1) * postsPerPage;
+    paths.push({
+      params: { page: String(currentPage) },
+      props: {
+        page: {
+          currentPage,
+          lastPage,
+          data: posts.slice(start, start + postsPerPage),
+        },
+      },
+    });
+  }
+
+  return paths;
+}
+
+const { page } = Astro.props as PageProps;
+---
+
+<BaseLayout title={`Posts, page ${page.currentPage}`} description="Older posts.">
+  <h1>Posts</h1>
+  <PostList posts={page.data} />
+  <Pagination currentPage={page.currentPage} lastPage={page.lastPage} />
+</BaseLayout>
