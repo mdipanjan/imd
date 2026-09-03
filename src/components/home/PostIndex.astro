@@ -1,0 +1,115 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type Props = {
+  posts: CollectionEntry<'posts'>[];
+  total: number;
+};
+
+const { posts, total } = Astro.props;
+
+const formatDate = (date: Date) =>
+  new Intl.DateTimeFormat('en', { month: 'short', day: '2-digit' }).format(date);
+---
+
+<section class="journal-index" aria-labelledby="recent-posts">
+  <header>
+    <p>More writing</p>
+    <h2 id="recent-posts">Recent notes</h2>
+    <span>{String(total).padStart(2, '0')} published</span>
+  </header>
+  {
+    posts.length > 0 ? (
+      <div class="journal-index__list">
+        {posts.map((post) => (
+          <a href={`/posts/${post.id}/`}>
+            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+            <strong>{post.data.title}</strong>
+            <em>{post.data.tags[0] ?? 'Field note'}</em>
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="journal-index__empty">More notes will appear here as the journal grows.</p>
+    )
+  }
+</section>
+
+<style>
+  .journal-index {
+    margin-top: var(--space-8);
+  }
+
+  header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+  }
+
+  header p,
+  header span {
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+  }
+
+  header p {
+    grid-column: 1 / -1;
+    margin: 0 0 var(--space-2);
+    color: var(--color-accent);
+  }
+
+  h2 {
+    margin: 0 0 var(--space-4);
+    font-size: 1.7rem;
+    font-weight: var(--weight-regular);
+  }
+
+  .journal-index__list a {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) 8rem;
+    gap: var(--space-4);
+    padding-block: 1.15rem;
+    border-top: var(--border-thin) solid var(--color-rule);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .journal-index__list a:last-child {
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  time,
+  em {
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  em {
+    text-align: right;
+  }
+
+  a:hover strong {
+    color: var(--color-accent);
+  }
+
+  .journal-index__empty {
+    margin: 0;
+    padding-block: var(--space-5);
+    border-block: var(--border-thin) solid var(--color-rule);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  @media (max-width: 560px) {
+    .journal-index__list a {
+      grid-template-columns: 4rem minmax(0, 1fr);
+    }
+
+    em {
+      display: none;
+    }
+  }
+</style>

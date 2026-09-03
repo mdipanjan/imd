@@ -66,6 +66,7 @@ test('layout tokens name the reading canvas and its supporting rails', async () 
   }
 
   assert.match(layout, /--page-gutter:/);
+  assert.match(layout, /--page-edge: 4rem/);
 });
 
 test('production rules consume semantic colour, type, and layout tokens', async () => {

@@ -1,0 +1,93 @@
+<style is:global>
+  .article-prose .code-frame {
+    overflow: hidden;
+    margin-block: var(--space-6);
+    border: var(--border-thin) solid var(--color-rule-strong);
+    background: var(--color-code-surface);
+  }
+
+  .article-prose .code-frame__toolbar {
+    display: flex;
+    min-height: 2.4rem;
+    padding-inline: var(--space-4);
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: var(--border-thin) solid var(--color-rule);
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+  }
+
+  .article-prose .code-frame__copy {
+    padding: 0.25rem 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-accent);
+    font: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  .article-prose .code-frame__copy:hover,
+  .article-prose .code-frame__copy:focus-visible {
+    color: var(--color-accent-hover);
+  }
+
+  .article-prose .code-frame pre {
+    max-width: 100%;
+    margin: 0;
+    border: 0;
+    background: transparent !important;
+    color: var(--color-text);
+  }
+</style>
+
+<script>
+  const languageNames: Record<string, string> = {
+    js: 'JavaScript',
+    ts: 'TypeScript',
+    txt: 'Text',
+  };
+
+  const copyCode = async (text: string) => {
+    await navigator.clipboard.writeText(text);
+  };
+
+  document.querySelectorAll<HTMLElement>('.article-prose pre[data-language]').forEach((pre) => {
+    if (pre.parentElement?.classList.contains('code-frame')) return;
+
+    const language = pre.dataset.language ?? 'text';
+    const frame = document.createElement('div');
+    const toolbar = document.createElement('div');
+    const label = document.createElement('span');
+    const button = document.createElement('button');
+
+    frame.className = 'code-frame';
+    toolbar.className = 'code-frame__toolbar';
+    label.textContent = languageNames[language] ?? language;
+    button.className = 'code-frame__copy';
+    button.type = 'button';
+    button.dataset.copyCode = '';
+    button.textContent = 'Copy';
+    button.setAttribute('aria-label', `Copy ${label.textContent} code`);
+    button.setAttribute('aria-live', 'polite');
+
+    pre.before(frame);
+    toolbar.append(label, button);
+    frame.append(toolbar, pre);
+
+    button.addEventListener('click', async () => {
+      try {
+        await copyCode(pre.textContent ?? '');
+        button.textContent = 'Copied';
+      } catch {
+        button.textContent = 'Copy failed';
+      }
+
+      window.setTimeout(() => {
+        button.textContent = 'Copy';
+      }, 1600);
+    });
+  });
+</script>

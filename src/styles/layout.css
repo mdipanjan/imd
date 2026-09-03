@@ -6,6 +6,6 @@
   --width-index-rail: 15rem;
   --width-annotation-rail: 15rem;
   --page-gutter: clamp(1.25rem, 4vw, 3.5rem);
-  --page-edge: 2rem;
+  --page-edge: 4rem;
   --viewport-minimum: 20rem;
 }

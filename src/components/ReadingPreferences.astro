@@ -1,0 +1,199 @@
+---
+const palettes = [
+  { value: 'paper', label: 'Paper' },
+  { value: 'mineral', label: 'Mineral' },
+  { value: 'moss', label: 'Moss' },
+];
+
+const typefaces = [
+  { value: 'field', label: 'Field' },
+  { value: 'workbench', label: 'Workbench' },
+  { value: 'ledger', label: 'Ledger' },
+];
+---
+
+<details class="reading-preferences">
+  <summary aria-label="Reading settings" title="Reading settings">
+    <svg class="reading-preferences__open-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3 6h14M3 14h14M7 3v6M13 11v6"></path>
+      <circle cx="7" cy="6" r="1.7"></circle>
+      <circle cx="13" cy="14" r="1.7"></circle>
+    </svg>
+    <svg class="reading-preferences__close-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="m4 4 12 12M16 4 4 16"></path>
+    </svg>
+  </summary>
+
+  <div class="reading-preferences__panel">
+    <div class="preference-group" role="group" aria-label="Color theme">
+      <span>Color</span>
+      {
+        palettes.map(({ value, label }) => (
+          <button type="button" data-palette-option={value} aria-pressed="false">
+            {label}
+          </button>
+        ))
+      }
+    </div>
+
+    <div class="preference-group" role="group" aria-label="Reading font">
+      <span>Type</span>
+      {
+        typefaces.map(({ value, label }) => (
+          <button type="button" data-typeface-option={value} aria-pressed="false">
+            {label}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+</details>
+
+<script is:inline>
+  (() => {
+    const root = document.documentElement;
+    const storageKeys = {
+      palette: 'hybrid-journal:palette',
+      typeface: 'hybrid-journal:typeface',
+    };
+
+    const updatePressedState = (kind, value) => {
+      document.querySelectorAll(`[data-${kind}-option]`).forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset[`${kind}Option`] === value));
+      });
+    };
+
+    const selectPreference = (kind, value) => {
+      root.dataset[kind] = value;
+      updatePressedState(kind, value);
+
+      try {
+        localStorage.setItem(storageKeys[kind], value);
+      } catch {
+        // The selected value still applies when storage is unavailable.
+      }
+    };
+
+    document.querySelectorAll('[data-palette-option]').forEach((button) => {
+      button.addEventListener('click', () =>
+        selectPreference('palette', button.dataset.paletteOption),
+      );
+    });
+
+    document.querySelectorAll('[data-typeface-option]').forEach((button) => {
+      button.addEventListener('click', () =>
+        selectPreference('typeface', button.dataset.typefaceOption),
+      );
+    });
+
+    updatePressedState('palette', root.dataset.palette);
+    updatePressedState('typeface', root.dataset.typeface);
+  })();
+</script>
+
+<style>
+  .reading-preferences {
+    position: relative;
+    color: var(--color-text-faint);
+  }
+
+  summary {
+    display: grid;
+    width: 1.9rem;
+    height: 1.9rem;
+    place-items: center;
+    border: var(--border-thin) solid transparent;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover,
+  summary:focus-visible,
+  .reading-preferences[open] summary {
+    border-color: var(--color-rule);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    overflow: visible;
+    fill: var(--color-page);
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.35;
+  }
+
+  .reading-preferences__close-icon {
+    display: none;
+  }
+
+  .reading-preferences[open] .reading-preferences__open-icon {
+    display: none;
+  }
+
+  .reading-preferences[open] .reading-preferences__close-icon {
+    display: block;
+  }
+
+  .reading-preferences__panel {
+    display: grid;
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-thin) solid var(--color-rule);
+    background: var(--color-surface);
+    box-shadow: 0 0.55rem 1.5rem rgb(0 0 0 / 8%);
+  }
+
+  .preference-group {
+    display: flex;
+    align-items: center;
+    color: var(--color-text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  .preference-group > span {
+    width: 3.2rem;
+    color: var(--color-text-faint);
+    text-transform: uppercase;
+  }
+
+  button {
+    padding: 0.28rem 0.45rem;
+    border: var(--border-thin) solid transparent;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  button:hover,
+  button:focus-visible,
+  button[aria-pressed='true'] {
+    border-color: var(--color-rule);
+    background: var(--color-page);
+    color: var(--color-text);
+  }
+
+  @media (max-width: 560px) {
+    .reading-preferences__panel {
+      width: min(21rem, calc(100vw - 2rem));
+    }
+
+    .preference-group {
+      flex-wrap: wrap;
+    }
+  }
+</style>

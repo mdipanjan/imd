@@ -1,0 +1,96 @@
+---
+type FocusItem = {
+  label: string;
+  value: string;
+};
+
+type Props = {
+  items: FocusItem[];
+};
+
+const { items } = Astro.props;
+---
+
+<aside class="current-focus" aria-labelledby="current-focus-title">
+  <p id="current-focus-title" class="current-focus__label">Right now</p>
+  <dl>
+    {
+      items.map((item) => (
+        <div>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  <p class="current-focus__note">No content calendar. Notes appear when the model changes.</p>
+</aside>
+
+<style>
+  .current-focus {
+    padding: var(--space-7) var(--space-6) 0 var(--home-edge-inset);
+  }
+
+  .current-focus__label {
+    margin: 0 0 var(--space-5);
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.07em;
+  }
+
+  dl {
+    margin: 0;
+  }
+
+  dl div {
+    padding-block: var(--space-3);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  dt {
+    margin-bottom: var(--space-1);
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+  }
+
+  .current-focus__note {
+    margin: var(--space-7) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 800px) {
+    .current-focus {
+      padding: var(--space-6) var(--home-edge-inset);
+      border-bottom: var(--border-thin) solid var(--color-rule);
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .current-focus__note {
+      margin-top: var(--space-5);
+    }
+  }
+
+  @media (max-width: 560px) {
+    dl {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>

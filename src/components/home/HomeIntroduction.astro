@@ -1,0 +1,60 @@
+<section class="journal-introduction" aria-labelledby="home-title">
+  <p class="journal-label">Field notes from building software</p>
+  <div>
+    <h1 id="home-title">Things I learned by changing my mind.</h1>
+    <p>
+      I write through the uncertain middle: first attempts, broken assumptions, small experiments,
+      and the evidence that made me revise the model.
+    </p>
+  </div>
+</section>
+
+<style>
+  .journal-introduction {
+    display: grid;
+    grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
+    padding-bottom: clamp(var(--space-7), 5vw, var(--space-8));
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .journal-label {
+    margin: var(--space-2) 0 0;
+    padding-inline: var(--home-edge-inset) var(--space-6);
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.07em;
+  }
+
+  h1 {
+    max-width: 15ch;
+    margin: 0;
+    font-size: clamp(2.25rem, 3.5vw, 3.8rem);
+    font-weight: var(--weight-regular);
+    letter-spacing: -0.045em;
+  }
+
+  h1 + p {
+    max-width: 38rem;
+    margin: var(--space-6) 0 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-reading);
+  }
+
+  .journal-introduction > div {
+    padding-right: var(--home-edge-inset);
+  }
+
+  @media (max-width: 800px) {
+    .journal-introduction {
+      grid-template-columns: 1fr;
+      gap: var(--space-5);
+    }
+
+    .journal-introduction > div {
+      padding-inline: var(--home-edge-inset);
+    }
+  }
+</style>

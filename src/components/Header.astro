@@ -1,25 +1,43 @@
 ---
-const nav = [
+import { getCollection } from 'astro:content';
+import ReadingPreferences from './ReadingPreferences.astro';
+
+type Props = {
+  variant?: 'journal' | 'article';
+};
+
+const { variant = 'journal' } = Astro.props;
+const isArticle = variant === 'article';
+
+const latestPost = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+)[0];
+
+const journalNav = [
   { href: '/', label: 'Index' },
-  { href: '/archive/', label: 'Archive' },
+  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
   { href: '/about/', label: 'About' },
-  { href: '/rss.xml', label: 'RSS' },
 ];
+
+const articleNav = [
+  { href: '/', label: 'Index' },
+  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
+  { href: '/archive/', label: 'Revisions' },
+];
+
+const nav = isArticle ? articleNav : journalNav;
 
 const currentPath = Astro.url.pathname;
 const isCurrent = (href: string) =>
-  href === '/' ? currentPath === href : currentPath.startsWith(href) && href !== '/rss.xml';
+  href === '/' ? currentPath === href : currentPath.startsWith(href);
 ---
 
-<header class="site-header">
+<header class="site-header" data-variant={variant}>
   <div class="site-header__inner">
-    <a class="site-brand" href="/" aria-label="Dipanjan Mondal — thoughts, home">
-      <span class="site-brand__mark" aria-hidden="true">DM</span>
-      <span class="site-brand__text">
-        <strong>Dipanjan Mondal</strong>
-        <span>notes from the workbench</span>
-      </span>
+    <a class="site-brand" href="/">
+      {isArticle ? 'Dipanjan’s working notes' : 'Dipanjan Mondal'}
     </a>
+    {!isArticle && <p class="site-statement">An editable record of what I understand.</p>}
     <nav class="site-nav" aria-label="Primary navigation">
       {
         nav.map((item) => (
@@ -29,5 +47,6 @@ const isCurrent = (href: string) =>
         ))
       }
     </nav>
+    <ReadingPreferences />
   </div>
 </header>
