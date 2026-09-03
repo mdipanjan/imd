@@ -1,0 +1,74 @@
+/* Raw palette values live here; components consume only the semantic contract below. */
+:root {
+  --palette-paper-page: #e5dfd1;
+  --palette-paper-surface: #f7f0e2;
+  --palette-paper-text: #302a23;
+  --palette-paper-muted: #75695c;
+  --palette-paper-faint: #84796b;
+  --palette-paper-rule: #d7cbb8;
+  --palette-paper-rule-strong: #b9ab96;
+  --palette-paper-accent: #1e478f;
+  --palette-paper-revision: #a13d32;
+
+  --palette-mineral-page: #d9dee1;
+  --palette-mineral-surface: #f3f4f2;
+  --palette-mineral-text: #272c2e;
+  --palette-mineral-muted: #667176;
+  --palette-mineral-faint: #778288;
+  --palette-mineral-rule: #c8ced0;
+  --palette-mineral-rule-strong: #a8b1b5;
+  --palette-mineral-accent: #315f77;
+  --palette-mineral-revision: #a55237;
+
+  --palette-moss-page: #d6dccf;
+  --palette-moss-surface: #f1f2e8;
+  --palette-moss-text: #293129;
+  --palette-moss-muted: #65705f;
+  --palette-moss-faint: #788171;
+  --palette-moss-rule: #c5cbbb;
+  --palette-moss-rule-strong: #a6af9d;
+  --palette-moss-accent: #356b61;
+  --palette-moss-revision: #874952;
+}
+
+:root,
+html[data-palette='paper'] {
+  color-scheme: light;
+  --color-page: var(--palette-paper-page);
+  --color-surface: var(--palette-paper-surface);
+  --color-text: var(--palette-paper-text);
+  --color-text-muted: var(--palette-paper-muted);
+  --color-text-faint: var(--palette-paper-faint);
+  --color-rule: var(--palette-paper-rule);
+  --color-rule-strong: var(--palette-paper-rule-strong);
+  --color-accent: var(--palette-paper-accent);
+  --color-revision: var(--palette-paper-revision);
+  --color-accent-hover: color-mix(in srgb, var(--color-accent) 78%, var(--color-text));
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 9%, var(--color-surface));
+  --color-code-surface: color-mix(in srgb, var(--color-text) 7%, var(--color-surface));
+  --color-selection: color-mix(in srgb, var(--color-accent) 22%, var(--color-surface));
+}
+
+html[data-palette='mineral'] {
+  --color-page: var(--palette-mineral-page);
+  --color-surface: var(--palette-mineral-surface);
+  --color-text: var(--palette-mineral-text);
+  --color-text-muted: var(--palette-mineral-muted);
+  --color-text-faint: var(--palette-mineral-faint);
+  --color-rule: var(--palette-mineral-rule);
+  --color-rule-strong: var(--palette-mineral-rule-strong);
+  --color-accent: var(--palette-mineral-accent);
+  --color-revision: var(--palette-mineral-revision);
+}
+
+html[data-palette='moss'] {
+  --color-page: var(--palette-moss-page);
+  --color-surface: var(--palette-moss-surface);
+  --color-text: var(--palette-moss-text);
+  --color-text-muted: var(--palette-moss-muted);
+  --color-text-faint: var(--palette-moss-faint);
+  --color-rule: var(--palette-moss-rule);
+  --color-rule-strong: var(--palette-moss-rule-strong);
+  --color-accent: var(--palette-moss-accent);
+  --color-revision: var(--palette-moss-revision);
+}

@@ -12,15 +12,37 @@ const posts = (await getCollection('posts'))
 ---
 
 <BaseLayout description="A small personal blog about software, systems, and life.">
-  <section>
-    <h1>thoughts</h1>
-    <p class="muted">
-      A small personal blog. Mostly notes on software, systems, and things worth remembering.
-    </p>
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero__copy">
+      <p class="eyebrow">Personal field notes / software &amp; systems</p>
+      <h1 id="home-title">Thoughts from the workbench.</h1>
+      <p class="home-hero__lede">
+        A public notebook about building software, understanding systems, and the ideas worth
+        carrying forward.
+      </p>
+    </div>
+    <dl class="home-hero__legend" aria-label="About this journal">
+      <div>
+        <dt>Format</dt>
+        <dd>Essays, notes &amp; interactive explainers</dd>
+      </div>
+      <div>
+        <dt>Frequency</dt>
+        <dd>Whenever something clicks</dd>
+      </div>
+      <div>
+        <dt>Elsewhere</dt>
+        <dd><a href="/rss.xml">Follow via RSS ↗</a></dd>
+      </div>
+    </dl>
   </section>
 
-  <section aria-labelledby="recent-posts">
-    <h2 id="recent-posts">Recent posts</h2>
+  <section class="post-index" aria-labelledby="recent-posts">
+    <header class="section-heading">
+      <p><span>01</span> Latest writing</p>
+      <h2 id="recent-posts">Recent posts</h2>
+      <span class="section-heading__count">{String(posts.length).padStart(2, '0')} published</span>
+    </header>
     <PostList posts={posts.slice(0, POSTS_PER_PAGE)} />
     <Pagination currentPage={1} lastPage={Math.ceil(posts.length / POSTS_PER_PAGE)} />
   </section>

@@ -85,7 +85,7 @@ The token system will have three levels:
 Use tokens for repeatable design decisions. Do not turn every one-off measurement into a token or
 build speculative component abstractions.
 
-## Approved Studies, Not Yet Final Defaults
+## Palettes and Defaults
 
 ### Palette choices
 
@@ -93,8 +93,8 @@ build speculative component abstractions.
 - Mineral
 - Moss
 
-All three remain supported studies. The default palette will be selected while implementing the token
-system. These are reading palettes, not partial dark modes.
+All three remain supported studies. **Paper is the initial production default.** These are reading
+palettes, not partial dark modes.
 
 ### Typeface choices
 
@@ -102,8 +102,8 @@ system. These are reading palettes, not partial dark modes.
 - Workbench
 - Ledger
 
-Manual was rejected. The final default and whether fonts are self-hosted remain open until the
-typography foundation is implemented and compared consistently across platforms.
+Manual was rejected. **Field is the initial production default.** Whether the final fonts are
+self-hosted remains open until the typography is compared consistently across platforms.
 
 ## Explicitly Deferred
 

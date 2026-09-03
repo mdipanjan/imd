@@ -1,0 +1,50 @@
+/* Typeface studies share semantic roles so page components stay typeface-agnostic. */
+:root {
+  --font-family-field-display: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+  --font-family-field-reading: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+  --font-family-workbench-display: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-family-workbench-reading: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  --font-family-ledger-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --font-family-ledger-reading: 'Iowan Old Style', 'Palatino Linotype', Palatino, serif;
+  --font-family-interface: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+  --font-family-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  --font-size-root: 17px;
+  --font-size-root-compact: 16px;
+  --font-size-label: 0.68rem;
+  --font-size-small: 0.82rem;
+  --font-size-body: 1rem;
+  --font-size-lede: clamp(1rem, 1.5vw, 1.14rem);
+  --font-size-heading-3: 1.25rem;
+  --font-size-heading-2: clamp(1.6rem, 3vw, 2.25rem);
+  --font-size-heading-1: clamp(2.35rem, 4.4vw, 3.75rem);
+
+  --line-height-tight: 1.08;
+  --line-height-reading: 1.65;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+}
+
+:root,
+html[data-typeface='field'] {
+  --font-display: var(--font-family-field-display);
+  --font-reading: var(--font-family-field-reading);
+  --font-interface: var(--font-family-interface);
+  --font-code: var(--font-family-code);
+}
+
+html[data-typeface='workbench'] {
+  --font-display: var(--font-family-workbench-display);
+  --font-reading: var(--font-family-workbench-reading);
+  --font-interface: var(--font-family-interface);
+  --font-code: var(--font-family-code);
+}
+
+html[data-typeface='ledger'] {
+  --font-display: var(--font-family-ledger-display);
+  --font-reading: var(--font-family-ledger-reading);
+  --font-interface: var(--font-family-interface);
+  --font-code: var(--font-family-code);
+}
