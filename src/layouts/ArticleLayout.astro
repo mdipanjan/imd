@@ -1,5 +1,5 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import type { PostLink, PostView } from '../lib/post-view';
 import AnnotationRail from '../components/article/AnnotationRail.astro';
 import ArticleHeader from '../components/article/ArticleHeader.astro';
 import ArticleIndexRail from '../components/article/ArticleIndexRail.astro';
@@ -14,36 +14,37 @@ type Heading = {
 };
 
 type Props = {
-  post: CollectionEntry<'posts'>;
+  post: PostView;
   headings?: Heading[];
-  previous?: CollectionEntry<'posts'>;
-  next?: CollectionEntry<'posts'>;
+  previous?: PostLink;
+  next?: PostLink;
 };
 
 const { post, headings = [], previous, next } = Astro.props;
-const annotations = post.data.annotations;
+const annotations = post.annotations;
 const hasAnnotations = annotations.length > 0;
 ---
 
 <BaseLayout
-  title={post.data.title}
-  description={post.data.description}
+  title={post.title}
+  description={post.description}
   type="article"
-  publishedTime={post.data.date}
-  modifiedTime={post.data.updated}
-  tags={post.data.tags}
+  publishedTime={post.date}
+  modifiedTime={post.updated}
+  tags={post.tags}
   mainClass="article-page"
 >
   <article class:list={{ 'article-layout': true, 'article-layout--annotated': hasAnnotations }}>
-    <ArticleIndexRail headings={headings} date={post.data.date} context={post.data.description} />
+    <ArticleIndexRail headings={headings} variant="rail" />
     <div class="article-reading">
       <ArticleHeader
-        title={post.data.title}
-        description={post.data.description}
-        date={post.data.date}
-        updated={post.data.updated}
-        tags={post.data.tags}
+        title={post.title}
+        description={post.description}
+        date={post.date}
+        updated={post.updated}
+        tags={post.tags}
       />
+      <ArticleIndexRail headings={headings} variant="disclosure" />
       <div class="article-prose">
         <slot />
       </div>
@@ -101,6 +102,10 @@ const hasAnnotations = annotations.length > 0;
     margin-top: var(--space-7);
     font-size: 1.15rem;
     font-weight: var(--weight-medium);
+  }
+
+  :global(.article-prose :is(h2, h3)) {
+    scroll-margin-top: var(--space-6);
   }
 
   :global(.article-prose blockquote) {
@@ -163,13 +168,19 @@ const hasAnnotations = annotations.length > 0;
     color: var(--color-accent);
   }
 
-  @media (max-width: 1000px) {
-    .article-layout {
-      grid-template-columns: minmax(10rem, var(--width-index-rail)) minmax(0, 1fr);
+  :global(.annotation-trigger:focus-visible) {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  @media (max-width: 1180px) {
+    .article-layout,
+    .article-layout--annotated {
+      grid-template-columns: 12rem minmax(0, 1fr);
     }
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 900px) {
     .article-layout {
       display: block;
       width: 100%;
@@ -177,7 +188,13 @@ const hasAnnotations = annotations.length > 0;
     }
 
     .article-reading {
-      padding: var(--space-7) var(--page-gutter) var(--space-8);
+      padding: var(--space-7) clamp(var(--space-5), 6vw, var(--space-7)) var(--space-8);
+    }
+  }
+
+  @media (max-width: 620px) {
+    .article-reading {
+      padding-inline: var(--page-gutter);
     }
   }
 </style>

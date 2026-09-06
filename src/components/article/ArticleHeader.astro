@@ -1,4 +1,7 @@
 ---
+import MetadataList from '../MetadataList.astro';
+import { formatLongDate } from '../../lib/format';
+
 type Props = {
   title: string;
   description: string;
@@ -8,12 +11,14 @@ type Props = {
 };
 
 const { title, description, date, updated, tags } = Astro.props;
-const formatDate = (value: Date) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit',
-  }).format(value);
+const metadataItems = [
+  { label: 'Published', value: formatLongDate(date), datetime: date.toISOString() },
+  ...(updated
+    ? [{ label: 'Updated', value: formatLongDate(updated), datetime: updated.toISOString() }]
+    : []),
+  { label: 'Status', value: updated ? 'Revised' : 'First revision' },
+  ...(tags.length > 0 ? [{ label: 'Filed under', value: tags.join(' / ') }] : []),
+];
 ---
 
 <header class="article-header">
@@ -22,32 +27,7 @@ const formatDate = (value: Date) =>
   </p>
   <h1>{title}</h1>
   <p class="article-header__deck">{description}</p>
-  <dl class="article-header__meta">
-    <div>
-      <dt>Published</dt>
-      <dd><time datetime={date.toISOString()}>{formatDate(date)}</time></dd>
-    </div>
-    {
-      updated && (
-        <div>
-          <dt>Updated</dt>
-          <dd>{formatDate(updated)}</dd>
-        </div>
-      )
-    }
-    <div>
-      <dt>Status</dt>
-      <dd>{updated ? 'Revised' : 'First revision'}</dd>
-    </div>
-    {
-      tags.length > 0 && (
-        <div>
-          <dt>Filed under</dt>
-          <dd>{tags.join(' / ')}</dd>
-        </div>
-      )
-    }
-  </dl>
+  <MetadataList items={metadataItems} />
 </header>
 
 <style>
@@ -81,37 +61,5 @@ const formatDate = (value: Date) =>
     font-size: 0.96rem;
     font-style: italic;
     line-height: 1.55;
-  }
-
-  .article-header__meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-    gap: var(--space-3);
-    margin: 0;
-    padding: var(--space-4) 0;
-    border-block: var(--border-thin) solid var(--color-rule);
-    font-family: var(--font-interface);
-    font-size: var(--font-size-label);
-  }
-
-  .article-header__meta div {
-    display: grid;
-    gap: 0.2rem;
-  }
-
-  .article-header__meta dt,
-  .article-header__meta dd {
-    margin: 0;
-  }
-
-  .article-header__meta dt {
-    color: var(--color-accent);
-    font-weight: var(--weight-medium);
-    text-transform: uppercase;
-  }
-
-  .article-header__meta dd {
-    color: var(--color-text-muted);
-    text-transform: none;
   }
 </style>

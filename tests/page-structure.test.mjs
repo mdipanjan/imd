@@ -13,7 +13,7 @@ test('the landing page composes the approved journal sections from reusable comp
     assert.match(home, new RegExp(`<${component}`));
   }
 
-  assert.match(home, /posts\.slice\(1, POSTS_PER_PAGE\)/);
+  assert.match(home, /postViews\.slice\(1, POSTS_PER_PAGE\)/);
   assert.match(layout, /main\.home-page/);
   assert.match(layout, /padding: clamp\(3rem, 5vw, 4\.8rem\) 0/);
 });
@@ -53,16 +53,18 @@ test('the article route uses the production ArticleLayout', async () => {
   const route = await readSource('src/pages/posts/[...slug].astro');
 
   assert.match(route, /import ArticleLayout from/);
-  assert.match(route, /<ArticleLayout post=\{post\}/);
+  assert.match(route, /<ArticleLayout[\s\S]*post=\{article\}/);
   assert.doesNotMatch(route, /PostLayout/);
 });
 
-test('the article index stays fixed on wide screens and joins the flow on small screens', async () => {
+test('the article index stays fixed on wide screens and becomes a disclosure on tablets', async () => {
   const rail = await readSource('src/components/article/ArticleIndexRail.astro');
 
   assert.match(rail, /aria-label="On this page"/);
   assert.match(rail, /position: sticky/);
-  assert.match(rail, /@media \(max-width: 700px\)[\s\S]*position: static/);
+  assert.match(rail, /class="article-index-disclosure"/);
+  assert.match(rail, /@media \(max-width: 900px\)[\s\S]*display: none/);
+  assert.match(rail, /@media \(max-width: 900px\)[\s\S]*display: block/);
 });
 
 test('the article canvas reserves semantic widths for both supporting rails', async () => {
@@ -71,8 +73,8 @@ test('the article canvas reserves semantic widths for both supporting rails', as
   assert.match(layout, /var\(--width-index-rail\)/);
   assert.match(layout, /var\(--width-annotation-rail\)/);
   assert.match(layout, /article-layout--annotated/);
-  assert.match(layout, /@media \(max-width: 1000px\)/);
-  assert.match(layout, /@media \(max-width: 700px\)/);
+  assert.match(layout, /@media \(max-width: 1180px\)/);
+  assert.match(layout, /@media \(max-width: 900px\)/);
 });
 
 test('ordinary article metadata lives in the header rather than the annotation rail', async () => {
@@ -83,9 +85,7 @@ test('ordinary article metadata lives in the header rather than the annotation r
   assert.match(schema, /annotations: z\s*\.array/);
   assert.match(header, /Status/);
   assert.match(header, /Filed under/);
-  assert.match(header, /<dl class="article-header__meta">/);
-  assert.match(header, /<dt>Published<\/dt>/);
-  assert.match(header, /<dd>/);
+  assert.match(header, /<MetadataList items=\{metadataItems\} \/>/);
   assert.doesNotMatch(rail, /First published revision/);
   assert.doesNotMatch(rail, /Filed under/);
 });

@@ -1,5 +1,6 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import { formatShortDate, formatTaxonomy } from '../../lib/format';
+import type { PostView } from '../../lib/post-view';
 
 type Belief = {
   before: string;
@@ -7,31 +8,22 @@ type Belief = {
 };
 
 type Props = {
-  post?: CollectionEntry<'posts'>;
+  post?: PostView;
   belief?: Belief;
 };
 
 const { post, belief } = Astro.props;
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en', {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-  }).format(date);
-
-const formatTaxonomy = (tag: string) => tag.charAt(0).toUpperCase() + tag.slice(1);
 ---
 
 {
   post && (
     <article class="featured-post">
       <div class="featured-post__copy">
-        <p class="featured-post__label">Latest field note · {formatDate(post.data.date)}</p>
+        <p class="featured-post__label">Latest field note · {formatShortDate(post.date, true)}</p>
         <h2>
-          <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+          <a href={post.href}>{post.title}</a>
         </h2>
-        <p>{post.data.description}</p>
+        <p>{post.description}</p>
       </div>
       {belief && (
         <div class="belief-change" aria-label="A belief that changed">
@@ -42,9 +34,9 @@ const formatTaxonomy = (tag: string) => tag.charAt(0).toUpperCase() + tag.slice(
       )}
       <footer>
         <span class="featured-post__taxonomy">
-          {post.data.tags.map(formatTaxonomy).join(' · ') || 'Field note'}
+          {post.tags.map(formatTaxonomy).join(' · ') || 'Field note'}
         </span>
-        <span class="featured-post__state">{post.data.updated ? 'Revised' : 'First revision'}</span>
+        <span class="featured-post__state">{post.updated ? 'Revised' : 'First revision'}</span>
       </footer>
     </article>
   )
@@ -132,7 +124,7 @@ const formatTaxonomy = (tag: string) => tag.charAt(0).toUpperCase() + tag.slice(
     font-weight: var(--weight-medium);
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 900px) {
     .featured-post {
       grid-template-columns: 1fr;
     }

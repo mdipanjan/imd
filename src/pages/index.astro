@@ -5,12 +5,14 @@ import FeaturedPost from '../components/home/FeaturedPost.astro';
 import HomeIntroduction from '../components/home/HomeIntroduction.astro';
 import PostIndex from '../components/home/PostIndex.astro';
 import HomeLayout from '../layouts/HomeLayout.astro';
+import { toPostView } from '../lib/post-view';
 
 const POSTS_PER_PAGE = 8;
 
 const posts = (await getCollection('posts'))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const postViews = posts.map(toPostView);
 
 const currentFocus = [
   { label: 'Exploring', value: 'Memory and evaluation for agents' },
@@ -25,13 +27,17 @@ const currentFocus = [
     <CurrentFocus items={currentFocus} />
     <div class="journal-feed">
       <FeaturedPost
-        post={posts[0]}
+        post={postViews[0]}
         belief={{
           before: 'More structure makes publishing easier.',
           after: 'The smallest durable workflow wins.',
         }}
       />
-      <PostIndex posts={posts.slice(1, POSTS_PER_PAGE)} total={posts.length} />
+      {
+        postViews.length > 1 && (
+          <PostIndex posts={postViews.slice(1, POSTS_PER_PAGE)} total={postViews.length} />
+        )
+      }
     </div>
   </div>
 </HomeLayout>
@@ -49,7 +55,7 @@ const currentFocus = [
     border-left: var(--border-thin) solid var(--color-rule);
   }
 
-  @media (max-width: 800px) {
+  @media (max-width: 900px) {
     .journal-body {
       grid-template-columns: 1fr;
     }

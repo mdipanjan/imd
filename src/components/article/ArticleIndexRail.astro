@@ -7,34 +7,41 @@ type Heading = {
 
 type Props = {
   headings: Heading[];
-  date: Date;
-  context: string;
+  variant?: 'rail' | 'disclosure';
 };
 
-const { headings, date, context } = Astro.props;
+const { headings, variant = 'rail' } = Astro.props;
 const sections = headings.filter((heading) => heading.depth === 2);
-const formattedDate = new Intl.DateTimeFormat('en', {
-  year: 'numeric',
-  month: 'long',
-  day: '2-digit',
-}).format(date);
 ---
 
-<aside class="article-index-rail">
-  <div class="article-index-rail__sticky">
-    <p class="article-index-rail__date"><span>Published</span>{formattedDate}</p>
-    <p class="article-index-rail__context"><span>Context</span>{context}</p>
-    {
-      sections.length > 0 && (
+{
+  variant === 'rail' ? (
+    <aside class="article-index-rail">
+      <div class="article-index-rail__sticky">
+        <p>On this page</p>
         <nav aria-label="On this page">
           {sections.map((heading) => (
             <a href={`#${heading.slug}`}>{heading.text}</a>
           ))}
         </nav>
-      )
-    }
-  </div>
-</aside>
+      </div>
+    </aside>
+  ) : (
+    sections.length > 0 && (
+      <details class="article-index-disclosure">
+        <summary>
+          <span>On this page</span>
+          <span>{String(sections.length).padStart(2, '0')} sections</span>
+        </summary>
+        <nav aria-label="On this page">
+          {sections.map((heading) => (
+            <a href={`#${heading.slug}`}>{heading.text}</a>
+          ))}
+        </nav>
+      </details>
+    )
+  )
+}
 
 <style>
   .article-index-rail {
@@ -48,39 +55,18 @@ const formattedDate = new Intl.DateTimeFormat('en', {
     top: var(--space-6);
   }
 
-  .article-index-rail__date,
-  .article-index-rail__context {
-    margin: 0;
-    font-size: var(--font-size-small);
-    line-height: 1.55;
-  }
-
-  .article-index-rail__date {
-    font-family: var(--font-interface);
-    font-size: var(--font-size-label);
-    text-transform: uppercase;
-  }
-
-  p span {
-    display: block;
-    margin-bottom: var(--space-2);
-    color: var(--color-text-faint);
-    font-family: var(--font-interface);
-    font-size: var(--font-size-label);
-    font-style: normal;
-    text-transform: uppercase;
-  }
-
-  .article-index-rail__context {
-    margin-top: var(--space-7);
+  .article-index-rail p {
+    margin: 0 0 var(--space-5);
     color: var(--color-accent);
-    font-style: italic;
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
 
   nav {
     display: grid;
     gap: var(--space-3);
-    margin-top: var(--space-7);
   }
 
   nav a {
@@ -95,26 +81,58 @@ const formattedDate = new Intl.DateTimeFormat('en', {
     color: var(--color-accent);
   }
 
-  @media (max-width: 700px) {
+  .article-index-disclosure {
+    display: none;
+    margin: var(--space-5) 0 0;
+    border-block: var(--border-thin) solid var(--color-rule);
+    color: var(--color-text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  .article-index-disclosure summary {
+    display: flex;
+    min-height: 2.75rem;
+    padding-block: var(--space-3);
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+    color: var(--color-accent);
+    text-transform: uppercase;
+  }
+
+  .article-index-disclosure summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .article-index-disclosure summary span:last-child {
+    color: var(--color-text-faint);
+  }
+
+  .article-index-disclosure nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    padding-bottom: var(--space-3);
+  }
+
+  .article-index-disclosure nav a {
+    padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  }
+
+  @media (max-width: 900px) {
     .article-index-rail {
-      padding: var(--space-5) var(--page-gutter);
-      border-right: 0;
-      border-bottom: var(--border-thin) solid var(--color-rule);
+      display: none;
     }
 
-    .article-index-rail__sticky {
-      position: static;
+    .article-index-disclosure {
+      display: block;
     }
+  }
 
-    .article-index-rail__context {
-      margin-top: var(--space-5);
-    }
-
-    nav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-2) var(--space-4);
-      margin-top: var(--space-5);
+  @media (max-width: 520px) {
+    .article-index-disclosure nav {
+      grid-template-columns: 1fr;
     }
   }
 </style>

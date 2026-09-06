@@ -1,15 +1,13 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import { formatShortDate } from '../../lib/format';
+import type { PostView } from '../../lib/post-view';
 
 type Props = {
-  posts: CollectionEntry<'posts'>[];
+  posts: PostView[];
   total: number;
 };
 
 const { posts, total } = Astro.props;
-
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en', { month: 'short', day: '2-digit' }).format(date);
 ---
 
 <section class="journal-index" aria-labelledby="recent-posts">
@@ -22,10 +20,10 @@ const formatDate = (date: Date) =>
     posts.length > 0 ? (
       <div class="journal-index__list">
         {posts.map((post) => (
-          <a href={`/posts/${post.id}/`}>
-            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-            <strong>{post.data.title}</strong>
-            <em>{post.data.tags[0] ?? 'Field note'}</em>
+          <a href={post.href}>
+            <time datetime={post.date.toISOString()}>{formatShortDate(post.date)}</time>
+            <strong>{post.title}</strong>
+            <em>{post.tags[0] ?? 'Field note'}</em>
           </a>
         ))}
       </div>

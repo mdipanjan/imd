@@ -47,6 +47,18 @@ const isCurrent = (href: string) =>
         ))
       }
     </nav>
+    <details class="site-nav-menu">
+      <summary aria-label="Navigation menu">Menu</summary>
+      <nav aria-label="Compact navigation">
+        {
+          nav.map((item) => (
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+    </details>
     <ReadingPreferences />
   </div>
 </header>

@@ -192,6 +192,16 @@ a:focus-visible {
   outline-offset: 4px;
 }
 
+:where(button, summary):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+:where(a, button, summary) {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: var(--color-accent-soft);
+}
+
 h1,
 h2,
 h3 {
@@ -200,6 +210,7 @@ h3 {
   font-weight: var(--weight-medium);
   line-height: var(--line-height-tight);
   letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
 h1 {
@@ -399,7 +410,7 @@ main > h1 ~ :not(.archive-list) {
   text-transform: uppercase;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .site-header__inner {
     grid-template-columns: 1fr auto auto;
     min-height: 5rem;
@@ -410,7 +421,7 @@ main > h1 ~ :not(.archive-list) {
   }
 
   .site-nav a {
-    padding: 0;
+    padding-block: 0.7rem;
   }
 
   main {
@@ -436,6 +447,69 @@ main > h1 ~ :not(.archive-list) {
   }
 }
 
+.site-nav-menu {
+  display: none;
+  position: relative;
+  font-family: var(--font-interface);
+  font-size: var(--font-size-label);
+}
+
+.site-nav-menu > summary {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  list-style: none;
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+}
+
+.site-nav-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.site-nav-menu > nav {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  display: grid;
+  width: 10rem;
+  padding: var(--space-2);
+  border: var(--border-thin) solid var(--color-rule);
+  background: var(--color-surface);
+  box-shadow: 0 0.55rem 1.5rem rgb(0 0 0 / 8%);
+}
+
+.site-nav-menu a {
+  padding: 0.7rem 0.75rem;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.site-nav-menu a:hover,
+.site-nav-menu a[aria-current='page'] {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+@media (max-width: 620px) {
+  .site-header__inner,
+  .site-header[data-variant='article'] .site-header__inner {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: var(--space-2);
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .site-nav-menu {
+    display: block;
+  }
+}
+
 @media (max-width: 520px) {
   :root {
     --page-gutter: 1.15rem;
@@ -448,10 +522,6 @@ main > h1 ~ :not(.archive-list) {
 
   h1 {
     font-size: var(--font-size-heading-1);
-  }
-
-  .site-nav a:not(:first-child) {
-    display: none;
   }
 
   .post-item {
