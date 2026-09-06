@@ -1,0 +1,57 @@
+---
+type MetadataItem = {
+  label: string;
+  value: string;
+  datetime?: string;
+};
+
+type Props = {
+  items: MetadataItem[];
+};
+
+const { items } = Astro.props;
+---
+
+<dl class="metadata-list">
+  {
+    items.map((item) => (
+      <div>
+        <dt>{item.label}</dt>
+        <dd>{item.datetime ? <time datetime={item.datetime}>{item.value}</time> : item.value}</dd>
+      </div>
+    ))
+  }
+</dl>
+
+<style>
+  .metadata-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-4) 0;
+    border-block: var(--border-thin) solid var(--color-rule);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  dt,
+  dd {
+    margin: 0;
+  }
+
+  dt {
+    color: var(--color-accent);
+    font-weight: var(--weight-medium);
+    text-transform: uppercase;
+  }
+
+  dd {
+    color: var(--color-text-muted);
+  }
+</style>

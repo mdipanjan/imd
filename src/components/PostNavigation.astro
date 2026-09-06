@@ -1,9 +1,9 @@
 ---
-import type { CollectionEntry } from 'astro:content';
+import type { PostLink } from '../lib/post-view';
 
 type Props = {
-  previous?: CollectionEntry<'posts'>;
-  next?: CollectionEntry<'posts'>;
+  previous?: PostLink;
+  next?: PostLink;
 };
 
 const { previous, next } = Astro.props;
@@ -14,17 +14,17 @@ const { previous, next } = Astro.props;
     <nav class="post-navigation" aria-label="Adjacent posts">
       <div>
         {next && (
-          <a href={`/posts/${next.id}/`} rel="next">
+          <a href={next.href} rel="next">
             <span>Newer</span>
-            {next.data.title}
+            {next.title}
           </a>
         )}
       </div>
       <div>
         {previous && (
-          <a href={`/posts/${previous.id}/`} rel="prev">
+          <a href={previous.href} rel="prev">
             <span>Older</span>
-            {previous.data.title}
+            {previous.title}
           </a>
         )}
       </div>

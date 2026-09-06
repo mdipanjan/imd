@@ -1,0 +1,341 @@
+---
+const palettes = [
+  { value: 'paper', label: 'Paper' },
+  { value: 'mineral', label: 'Mineral' },
+  { value: 'moss', label: 'Moss' },
+];
+
+const typefaces = [
+  { value: 'field', label: 'Field' },
+  { value: 'workbench', label: 'Workbench' },
+  { value: 'ledger', label: 'Ledger' },
+];
+---
+
+<details class="reading-preferences">
+  <summary aria-label="Reading settings" title="Reading settings">
+    <svg class="reading-preferences__open-icon" viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M3 6h14M3 14h14M7 3v6M13 11v6"></path>
+      <circle cx="7" cy="6" r="1.7"></circle>
+      <circle cx="13" cy="14" r="1.7"></circle>
+    </svg>
+  </summary>
+
+  <div class="reading-preferences__panel">
+    <header class="reading-preferences__header">
+      <p class="reading-preferences__title">Reading preferences</p>
+      <p>Choose the page atmosphere and reading voice.</p>
+    </header>
+
+    <fieldset class="preference-group">
+      <legend>Palette</legend>
+      <div class="preference-options">
+        {
+          palettes.map(({ value, label }) => (
+            <button
+              class="preference-option preference-option--palette"
+              type="button"
+              data-palette-option={value}
+              aria-pressed="false"
+            >
+              <span class="preference-option__swatch" aria-hidden="true">
+                <span class="preference-option__page" />
+                <span class="preference-option__surface" />
+                <span class="preference-option__ink" />
+              </span>
+              <span class="preference-option__label">{label}</span>
+            </button>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="preference-group">
+      <legend>Typeface</legend>
+      <div class="preference-options">
+        {
+          typefaces.map(({ value, label }) => (
+            <button
+              class="preference-option preference-option--typeface"
+              type="button"
+              data-typeface-option={value}
+              aria-pressed="false"
+            >
+              <span class="preference-option__sample" aria-hidden="true">
+                Aa
+              </span>
+              <span class="preference-option__label">{label}</span>
+            </button>
+          ))
+        }
+      </div>
+    </fieldset>
+  </div>
+</details>
+
+<script is:inline>
+  (() => {
+    const root = document.documentElement;
+    const storageKeys = {
+      palette: 'hybrid-journal:palette',
+      typeface: 'hybrid-journal:typeface',
+    };
+
+    const updatePressedState = (kind, value) => {
+      document.querySelectorAll(`[data-${kind}-option]`).forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset[`${kind}Option`] === value));
+      });
+    };
+
+    const selectPreference = (kind, value) => {
+      root.dataset[kind] = value;
+      updatePressedState(kind, value);
+
+      try {
+        localStorage.setItem(storageKeys[kind], value);
+      } catch {
+        // The selected value still applies when storage is unavailable.
+      }
+    };
+
+    document.querySelectorAll('[data-palette-option]').forEach((button) => {
+      button.addEventListener('click', () =>
+        selectPreference('palette', button.dataset.paletteOption),
+      );
+    });
+
+    document.querySelectorAll('[data-typeface-option]').forEach((button) => {
+      button.addEventListener('click', () =>
+        selectPreference('typeface', button.dataset.typefaceOption),
+      );
+    });
+
+    updatePressedState('palette', root.dataset.palette);
+    updatePressedState('typeface', root.dataset.typeface);
+  })();
+</script>
+
+<style>
+  .reading-preferences {
+    position: relative;
+    color: var(--color-text-faint);
+  }
+
+  summary {
+    display: grid;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    place-items: center;
+    border: var(--border-thin) solid transparent;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  summary:hover,
+  summary:focus-visible,
+  .reading-preferences[open] summary {
+    border-color: var(--color-rule);
+    background: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    overflow: visible;
+    fill: var(--color-page);
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-width: 1.35;
+  }
+
+  .reading-preferences__panel {
+    display: grid;
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + var(--space-2));
+    right: 0;
+    width: min(23rem, calc(100vw - 2rem));
+    gap: var(--space-5);
+    padding: var(--space-5);
+    border: var(--border-thin) solid var(--color-rule);
+    background: var(--color-surface);
+    box-shadow: 0 1.25rem 2.75rem rgb(0 0 0 / 10%);
+  }
+
+  .reading-preferences__header {
+    display: grid;
+    gap: 0.15rem;
+    padding-bottom: var(--space-4);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .reading-preferences__header p {
+    margin: 0;
+  }
+
+  .reading-preferences__title {
+    color: var(--color-text);
+    font-family: var(--font-reading);
+    font-size: var(--font-size-small);
+    font-weight: var(--weight-medium);
+  }
+
+  .reading-preferences__header p:last-child {
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    line-height: 1.5;
+  }
+
+  .preference-group {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  legend {
+    margin-bottom: var(--space-3);
+    padding: 0;
+    color: var(--color-text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .preference-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
+  }
+
+  .preference-option {
+    display: grid;
+    position: relative;
+    min-width: 0;
+    min-height: 4.5rem;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    align-content: start;
+    border: var(--border-thin) solid transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  .preference-option:hover,
+  .preference-option:focus-visible {
+    border-color: var(--color-rule-strong);
+    background: var(--color-accent-soft);
+    color: var(--color-text);
+  }
+
+  .preference-option[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
+
+  .preference-option[aria-pressed='true']::after {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 50%;
+    background: var(--color-accent);
+    content: '';
+  }
+
+  .preference-option__swatch {
+    display: grid;
+    position: relative;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    height: 1.8rem;
+    overflow: hidden;
+    border: var(--border-thin) solid var(--color-rule);
+  }
+
+  .preference-option__page,
+  .preference-option__surface {
+    display: block;
+  }
+
+  .preference-option__page {
+    background: var(--option-page);
+  }
+
+  .preference-option__surface {
+    background: var(--option-surface);
+  }
+
+  .preference-option__ink {
+    position: absolute;
+    right: 0.35rem;
+    bottom: 0.3rem;
+    width: 0.8rem;
+    height: 0.13rem;
+    background: var(--option-ink);
+  }
+
+  [data-palette-option='paper'] {
+    --option-page: var(--palette-paper-page);
+    --option-surface: var(--palette-paper-surface);
+    --option-ink: var(--palette-paper-accent);
+  }
+
+  [data-palette-option='mineral'] {
+    --option-page: var(--palette-mineral-page);
+    --option-surface: var(--palette-mineral-surface);
+    --option-ink: var(--palette-mineral-accent);
+  }
+
+  [data-palette-option='moss'] {
+    --option-page: var(--palette-moss-page);
+    --option-surface: var(--palette-moss-surface);
+    --option-ink: var(--palette-moss-accent);
+  }
+
+  .preference-option__sample {
+    display: flex;
+    height: 2rem;
+    align-items: flex-end;
+    color: var(--color-text);
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  [data-typeface-option='field'] .preference-option__sample {
+    font-family: var(--font-family-field-reading);
+  }
+
+  [data-typeface-option='workbench'] .preference-option__sample {
+    font-family: var(--font-family-workbench-display);
+  }
+
+  [data-typeface-option='ledger'] .preference-option__sample {
+    font-family: var(--font-family-ledger-reading);
+  }
+
+  .preference-option__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 520px) {
+    .reading-preferences__panel {
+      gap: var(--space-4);
+      padding: var(--space-4);
+    }
+  }
+</style>

@@ -17,16 +17,26 @@ const formatDate = (date: Date) =>
 
 <div class="post-list">
   {
-    posts.map((post) => (
+    posts.map((post, index) => (
       <article class="post-item">
-        <h2>
-          <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-        </h2>
-        <div class="post-meta">
-          <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-          {post.data.tags.length > 0 && <span>· {post.data.tags.join(', ')}</span>}
+        <span class="post-item__index" aria-hidden="true">
+          {String(index + 1).padStart(2, '0')}
+        </span>
+        <div class="post-item__body">
+          <div class="post-meta">
+            <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
+            {post.data.tags.map((tag) => (
+              <span>{tag}</span>
+            ))}
+          </div>
+          <h2>
+            <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+          </h2>
+          <p>{post.data.description}</p>
         </div>
-        <p>{post.data.description}</p>
+        <span class="post-item__arrow" aria-hidden="true">
+          ↗
+        </span>
       </article>
     ))
   }

@@ -1,15 +1,64 @@
 ---
-const nav = [
-  { href: '/', label: 'blog' },
-  { href: '/archive/', label: 'archive' },
-  { href: '/about/', label: 'about' },
-  { href: '/rss.xml', label: 'rss' },
+import { getCollection } from 'astro:content';
+import ReadingPreferences from './ReadingPreferences.astro';
+
+type Props = {
+  variant?: 'journal' | 'article';
+};
+
+const { variant = 'journal' } = Astro.props;
+const isArticle = variant === 'article';
+
+const latestPost = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+)[0];
+
+const journalNav = [
+  { href: '/', label: 'Index' },
+  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
+  { href: '/about/', label: 'About' },
 ];
+
+const articleNav = [
+  { href: '/', label: 'Index' },
+  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
+  { href: '/archive/', label: 'Revisions' },
+];
+
+const nav = isArticle ? articleNav : journalNav;
+
+const currentPath = Astro.url.pathname;
+const isCurrent = (href: string) =>
+  href === '/' ? currentPath === href : currentPath.startsWith(href);
 ---
 
-<header class="site-header">
-  <p class="site-title"><a href="/">thoughts</a></p>
-  <nav class="site-nav" aria-label="Primary navigation">
-    {nav.map((item) => <a href={item.href}>{item.label}</a>)}
-  </nav>
+<header class="site-header" data-variant={variant}>
+  <div class="site-header__inner">
+    <a class="site-brand" href="/">
+      {isArticle ? 'Dipanjan’s working notes' : 'Dipanjan Mondal'}
+    </a>
+    {!isArticle && <p class="site-statement">An editable record of what I understand.</p>}
+    <nav class="site-nav" aria-label="Primary navigation">
+      {
+        nav.map((item) => (
+          <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <details class="site-nav-menu">
+      <summary aria-label="Navigation menu">Menu</summary>
+      <nav aria-label="Compact navigation">
+        {
+          nav.map((item) => (
+            <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+              {item.label}
+            </a>
+          ))
+        }
+      </nav>
+    </details>
+    <ReadingPreferences />
+  </div>
 </header>

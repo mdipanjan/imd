@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
-import PostLayout from '../../layouts/PostLayout.astro';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { toPostLink, toPostView } from '../../lib/post-view';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts'))
@@ -19,8 +20,14 @@ export async function getStaticPaths() {
 
 const { post, previous, next } = Astro.props;
 const { Content, headings } = await render(post);
+const article = toPostView(post);
 ---
 
-<PostLayout post={post} headings={headings} previous={previous} next={next}>
+<ArticleLayout
+  post={article}
+  headings={headings}
+  previous={toPostLink(previous)}
+  next={toPostLink(next)}
+>
   <Content />
-</PostLayout>
+</ArticleLayout>

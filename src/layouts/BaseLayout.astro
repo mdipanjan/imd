@@ -12,6 +12,7 @@ type Props = {
   publishedTime?: Date;
   modifiedTime?: Date;
   tags?: string[];
+  mainClass?: string;
 };
 
 const {
@@ -21,11 +22,12 @@ const {
   publishedTime,
   modifiedTime,
   tags = [],
+  mainClass,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang={site.locale}>
+<html lang={site.locale} data-palette="paper" data-typeface="field">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -39,10 +41,40 @@ const {
       modifiedTime={modifiedTime}
       tags={tags}
     />
+    <script is:inline>
+      (() => {
+        const preferences = {
+          palette: {
+            fallback: 'paper',
+            options: ['paper', 'mineral', 'moss'],
+            storageKey: 'hybrid-journal:palette',
+          },
+          typeface: {
+            fallback: 'field',
+            options: ['field', 'workbench', 'ledger'],
+            storageKey: 'hybrid-journal:typeface',
+          },
+        };
+
+        Object.entries(preferences).forEach(([kind, preference]) => {
+          let value = preference.fallback;
+
+          try {
+            const savedValue = localStorage.getItem(preference.storageKey);
+            if (preference.options.includes(savedValue)) value = savedValue;
+          } catch {
+            // Defaults remain available when storage is unavailable.
+          }
+
+          document.documentElement.dataset[kind] = value;
+        });
+      })();
+    </script>
   </head>
-  <body>
-    <Header />
-    <main>
+  <body id="top">
+    <a class="skip-link" href="#content">Skip to content</a>
+    <Header variant={type === 'article' ? 'article' : 'journal'} />
+    <main id="content" class={mainClass}>
       <slot />
     </main>
     <Footer />

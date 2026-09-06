@@ -3,6 +3,10 @@ title: 'First Thought'
 description: 'A longer example post to prove the writing and scrolling rhythm.'
 date: 2026-04-28
 tags: [meta, writing]
+annotations:
+  - anchor: reading-measure
+    label: Why this width?
+    body: A comfortable line usually holds roughly forty to seventy characters. The exact number matters less than avoiding constant eye travel.
 draft: false
 toc: true
 ---
@@ -27,7 +31,7 @@ That is the spirit of this site.
 
 ## The shape of the page
 
-The page is narrow on purpose. A long line is hard to read. A short line feels more deliberate. Around forty to seventy characters per line is usually comfortable for essays, notes, and technical writing.
+The page is <button class="annotation-trigger" type="button" data-annotation-trigger="reading-measure" aria-controls="annotation-reading-measure" aria-expanded="false">narrow on purpose<sup>01</sup></button>. A long line is hard to read. A short line feels more deliberate. Around forty to seventy characters per line is usually comfortable for essays, notes, and technical writing.
 
 The vertical rhythm matters too. Paragraphs need enough space to breathe, but not so much that the text feels disconnected. Headings should create landmarks. Code blocks should stand apart without turning into heavy UI widgets.
 

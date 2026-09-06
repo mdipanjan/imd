@@ -1,0 +1,65 @@
+---
+import MetadataList from '../MetadataList.astro';
+import { formatLongDate } from '../../lib/format';
+
+type Props = {
+  title: string;
+  description: string;
+  date: Date;
+  updated?: Date;
+  tags: string[];
+};
+
+const { title, description, date, updated, tags } = Astro.props;
+const metadataItems = [
+  { label: 'Published', value: formatLongDate(date), datetime: date.toISOString() },
+  ...(updated
+    ? [{ label: 'Updated', value: formatLongDate(updated), datetime: updated.toISOString() }]
+    : []),
+  { label: 'Status', value: updated ? 'Revised' : 'First revision' },
+  ...(tags.length > 0 ? [{ label: 'Filed under', value: tags.join(' / ') }] : []),
+];
+---
+
+<header class="article-header">
+  <p class="article-header__running">
+    {tags[0] ?? 'Field note'} · working note{updated ? ' · revised' : ''}
+  </p>
+  <h1>{title}</h1>
+  <p class="article-header__deck">{description}</p>
+  <MetadataList items={metadataItems} />
+</header>
+
+<style>
+  .article-header {
+    max-width: var(--width-prose);
+    margin-inline: auto;
+    padding-bottom: var(--space-5);
+  }
+
+  .article-header__running {
+    margin: 0 0 var(--space-5);
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    max-width: 16ch;
+    margin: 0;
+    font-size: clamp(1.9rem, 2.7vw, 2.45rem);
+    font-weight: var(--weight-regular);
+    letter-spacing: -0.045em;
+  }
+
+  .article-header__deck {
+    max-width: 40rem;
+    margin: var(--space-4) 0 var(--space-5);
+    color: var(--color-text-muted);
+    font-size: 0.96rem;
+    font-style: italic;
+    line-height: 1.55;
+  }
+</style>
