@@ -25,3 +25,19 @@ test('reading preferences update semantic document attributes and persist them',
   assert.match(preferences, /localStorage\.setItem/);
   assert.match(layout, /localStorage\.getItem/);
 });
+
+test('the opened chooser presents palettes and typefaces as compact visual samples', async () => {
+  const preferences = await readSource('src/components/ReadingPreferences.astro');
+
+  assert.match(preferences, /<p class="reading-preferences__title">Reading preferences<\/p>/);
+  assert.match(preferences, /<fieldset class="preference-group">/);
+  assert.match(preferences, /<legend>Palette<\/legend>/);
+  assert.match(preferences, /class="preference-option__swatch"/);
+  assert.match(preferences, /class="preference-option__sample"/);
+  assert.match(preferences, /\.preference-option\[aria-pressed='true'\]::after/);
+  assert.match(preferences, /width: min\(23rem, calc\(100vw - 2rem\)\)/);
+  assert.doesNotMatch(
+    preferences,
+    /\.reading-preferences\[open\] \.reading-preferences__close-icon/,
+  );
+});

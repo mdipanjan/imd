@@ -19,33 +19,57 @@ const typefaces = [
       <circle cx="7" cy="6" r="1.7"></circle>
       <circle cx="13" cy="14" r="1.7"></circle>
     </svg>
-    <svg class="reading-preferences__close-icon" viewBox="0 0 20 20" aria-hidden="true">
-      <path d="m4 4 12 12M16 4 4 16"></path>
-    </svg>
   </summary>
 
   <div class="reading-preferences__panel">
-    <div class="preference-group" role="group" aria-label="Color theme">
-      <span>Color</span>
-      {
-        palettes.map(({ value, label }) => (
-          <button type="button" data-palette-option={value} aria-pressed="false">
-            {label}
-          </button>
-        ))
-      }
-    </div>
+    <header class="reading-preferences__header">
+      <p class="reading-preferences__title">Reading preferences</p>
+      <p>Choose the page atmosphere and reading voice.</p>
+    </header>
 
-    <div class="preference-group" role="group" aria-label="Reading font">
-      <span>Type</span>
-      {
-        typefaces.map(({ value, label }) => (
-          <button type="button" data-typeface-option={value} aria-pressed="false">
-            {label}
-          </button>
-        ))
-      }
-    </div>
+    <fieldset class="preference-group">
+      <legend>Palette</legend>
+      <div class="preference-options">
+        {
+          palettes.map(({ value, label }) => (
+            <button
+              class="preference-option preference-option--palette"
+              type="button"
+              data-palette-option={value}
+              aria-pressed="false"
+            >
+              <span class="preference-option__swatch" aria-hidden="true">
+                <span class="preference-option__page" />
+                <span class="preference-option__surface" />
+                <span class="preference-option__ink" />
+              </span>
+              <span class="preference-option__label">{label}</span>
+            </button>
+          ))
+        }
+      </div>
+    </fieldset>
+
+    <fieldset class="preference-group">
+      <legend>Typeface</legend>
+      <div class="preference-options">
+        {
+          typefaces.map(({ value, label }) => (
+            <button
+              class="preference-option preference-option--typeface"
+              type="button"
+              data-typeface-option={value}
+              aria-pressed="false"
+            >
+              <span class="preference-option__sample" aria-hidden="true">
+                Aa
+              </span>
+              <span class="preference-option__label">{label}</span>
+            </button>
+          ))
+        }
+      </div>
+    </fieldset>
   </div>
 </details>
 
@@ -129,71 +153,189 @@ const typefaces = [
     stroke-width: 1.35;
   }
 
-  .reading-preferences__close-icon {
-    display: none;
-  }
-
-  .reading-preferences[open] .reading-preferences__open-icon {
-    display: none;
-  }
-
-  .reading-preferences[open] .reading-preferences__close-icon {
-    display: block;
-  }
-
   .reading-preferences__panel {
     display: grid;
     position: absolute;
     z-index: 30;
     top: calc(100% + var(--space-2));
     right: 0;
-    width: max-content;
-    max-width: calc(100vw - 2rem);
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
+    width: min(23rem, calc(100vw - 2rem));
+    gap: var(--space-5);
+    padding: var(--space-5);
     border: var(--border-thin) solid var(--color-rule);
     background: var(--color-surface);
-    box-shadow: 0 0.55rem 1.5rem rgb(0 0 0 / 8%);
+    box-shadow: 0 1.25rem 2.75rem rgb(0 0 0 / 10%);
+  }
+
+  .reading-preferences__header {
+    display: grid;
+    gap: 0.15rem;
+    padding-bottom: var(--space-4);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .reading-preferences__header p {
+    margin: 0;
+  }
+
+  .reading-preferences__title {
+    color: var(--color-text);
+    font-family: var(--font-reading);
+    font-size: var(--font-size-small);
+    font-weight: var(--weight-medium);
+  }
+
+  .reading-preferences__header p:last-child {
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    line-height: 1.5;
   }
 
   .preference-group {
-    display: flex;
-    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
     color: var(--color-text-muted);
     font-family: var(--font-interface);
     font-size: var(--font-size-label);
   }
 
-  .preference-group > span {
-    width: 3.2rem;
+  legend {
+    margin-bottom: var(--space-3);
+    padding: 0;
     color: var(--color-text-faint);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
 
-  button {
-    padding: 0.28rem 0.45rem;
-    border: var(--border-thin) solid transparent;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    font: inherit;
+  .preference-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2);
   }
 
-  button:hover,
-  button:focus-visible,
-  button[aria-pressed='true'] {
-    border-color: var(--color-rule);
-    background: var(--color-page);
+  .preference-option {
+    display: grid;
+    position: relative;
+    min-width: 0;
+    min-height: 4.5rem;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    align-content: start;
+    border: var(--border-thin) solid transparent;
+    background: transparent;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  .preference-option:hover,
+  .preference-option:focus-visible {
+    border-color: var(--color-rule-strong);
+    background: var(--color-accent-soft);
     color: var(--color-text);
   }
 
-  @media (max-width: 560px) {
-    .reading-preferences__panel {
-      width: min(21rem, calc(100vw - 2rem));
-    }
+  .preference-option[aria-pressed='true'] {
+    border-color: var(--color-accent);
+    color: var(--color-text);
+  }
 
-    .preference-group {
-      flex-wrap: wrap;
+  .preference-option[aria-pressed='true']::after {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: 50%;
+    background: var(--color-accent);
+    content: '';
+  }
+
+  .preference-option__swatch {
+    display: grid;
+    position: relative;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    height: 1.8rem;
+    overflow: hidden;
+    border: var(--border-thin) solid var(--color-rule);
+  }
+
+  .preference-option__page,
+  .preference-option__surface {
+    display: block;
+  }
+
+  .preference-option__page {
+    background: var(--option-page);
+  }
+
+  .preference-option__surface {
+    background: var(--option-surface);
+  }
+
+  .preference-option__ink {
+    position: absolute;
+    right: 0.35rem;
+    bottom: 0.3rem;
+    width: 0.8rem;
+    height: 0.13rem;
+    background: var(--option-ink);
+  }
+
+  [data-palette-option='paper'] {
+    --option-page: var(--palette-paper-page);
+    --option-surface: var(--palette-paper-surface);
+    --option-ink: var(--palette-paper-accent);
+  }
+
+  [data-palette-option='mineral'] {
+    --option-page: var(--palette-mineral-page);
+    --option-surface: var(--palette-mineral-surface);
+    --option-ink: var(--palette-mineral-accent);
+  }
+
+  [data-palette-option='moss'] {
+    --option-page: var(--palette-moss-page);
+    --option-surface: var(--palette-moss-surface);
+    --option-ink: var(--palette-moss-accent);
+  }
+
+  .preference-option__sample {
+    display: flex;
+    height: 2rem;
+    align-items: flex-end;
+    color: var(--color-text);
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  [data-typeface-option='field'] .preference-option__sample {
+    font-family: var(--font-family-field-reading);
+  }
+
+  [data-typeface-option='workbench'] .preference-option__sample {
+    font-family: var(--font-family-workbench-display);
+  }
+
+  [data-typeface-option='ledger'] .preference-option__sample {
+    font-family: var(--font-family-ledger-reading);
+  }
+
+  .preference-option__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 520px) {
+    .reading-preferences__panel {
+      gap: var(--space-4);
+      padding: var(--space-4);
     }
   }
 </style>
