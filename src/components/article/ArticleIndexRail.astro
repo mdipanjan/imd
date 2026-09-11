@@ -21,7 +21,9 @@ const sections = headings.filter((heading) => heading.depth === 2);
         <p>On this page</p>
         <nav aria-label="On this page">
           {sections.map((heading) => (
-            <a href={`#${heading.slug}`}>{heading.text}</a>
+            <a data-section-link href={`#${heading.slug}`}>
+              {heading.text}
+            </a>
           ))}
         </nav>
       </div>
@@ -35,7 +37,9 @@ const sections = headings.filter((heading) => heading.depth === 2);
         </summary>
         <nav aria-label="On this page">
           {sections.map((heading) => (
-            <a href={`#${heading.slug}`}>{heading.text}</a>
+            <a data-section-link href={`#${heading.slug}`}>
+              {heading.text}
+            </a>
           ))}
         </nav>
       </details>
@@ -45,6 +49,7 @@ const sections = headings.filter((heading) => heading.depth === 2);
 
 <style>
   .article-index-rail {
+    font-family: var(--font-sidebar);
     padding: var(--space-7) var(--space-5);
     border-right: var(--border-thin) solid var(--color-rule);
     color: var(--color-text-muted);
@@ -58,10 +63,9 @@ const sections = headings.filter((heading) => heading.depth === 2);
   .article-index-rail p {
     margin: 0 0 var(--space-5);
     color: var(--color-accent);
-    font-family: var(--font-interface);
+    font-family: var(--font-sidebar);
     font-size: var(--font-size-label);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   nav {
@@ -70,13 +74,29 @@ const sections = headings.filter((heading) => heading.depth === 2);
   }
 
   nav a {
+    position: relative;
     color: var(--color-text-muted);
-    font-family: var(--font-interface);
+    font-family: var(--font-sidebar);
     font-size: var(--font-size-label);
     line-height: 1.45;
     text-decoration: none;
   }
 
+  nav a[aria-current='location'] {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    text-decoration-thickness: 1px;
+  }
+  nav a[aria-current='location']::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    top: 0.2em;
+    bottom: 0.2em;
+    width: 2px;
+    background: currentColor;
+  }
   nav a:hover {
     color: var(--color-accent);
   }
@@ -86,7 +106,7 @@ const sections = headings.filter((heading) => heading.depth === 2);
     margin: var(--space-5) 0 0;
     border-block: var(--border-thin) solid var(--color-rule);
     color: var(--color-text-muted);
-    font-family: var(--font-interface);
+    font-family: var(--font-sidebar);
     font-size: var(--font-size-label);
   }
 
@@ -99,7 +119,7 @@ const sections = headings.filter((heading) => heading.depth === 2);
     cursor: pointer;
     list-style: none;
     color: var(--color-accent);
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   .article-index-disclosure summary::-webkit-details-marker {
@@ -136,3 +156,36 @@ const sections = headings.filter((heading) => heading.depth === 2);
     }
   }
 </style>
+
+<script>
+  const links = [...document.querySelectorAll<HTMLAnchorElement>('[data-section-link]')];
+  const sections = [...document.querySelectorAll<HTMLElement>('.article-prose h2[id]')];
+  let scheduled = false;
+  function updateSection() {
+    scheduled = false;
+    const threshold = Math.min(160, window.innerHeight * 0.25);
+    let current = '';
+    for (const section of sections) {
+      if (section.getBoundingClientRect().top > threshold) break;
+      current = section.id;
+    }
+    for (const link of links) {
+      if (link.hash === `#${current}`) link.setAttribute('aria-current', 'location');
+      else link.removeAttribute('aria-current');
+    }
+  }
+  function scheduleUpdate() {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(updateSection);
+  }
+  window.addEventListener('scroll', scheduleUpdate, { passive: true });
+  window.addEventListener('resize', scheduleUpdate);
+  window.addEventListener('hashchange', scheduleUpdate);
+  links.forEach((link) =>
+    link.addEventListener('click', () => {
+      link.closest('details')?.removeAttribute('open');
+    }),
+  );
+  updateSection();
+</script>

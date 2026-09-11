@@ -29,7 +29,7 @@ const hasAnnotations = annotations.length > 0;
   title={post.title}
   description={post.description}
   type="article"
-  publishedTime={post.date}
+  publishedTime={post.draft ? undefined : post.date}
   modifiedTime={post.updated}
   tags={post.tags}
   mainClass="article-page"
@@ -42,6 +42,7 @@ const hasAnnotations = annotations.length > 0;
         description={post.description}
         date={post.date}
         updated={post.updated}
+        draft={post.draft}
         tags={post.tags}
       />
       <ArticleIndexRail headings={headings} variant="disclosure" />
@@ -193,6 +194,22 @@ const hasAnnotations = annotations.length > 0;
   }
 
   @media (max-width: 620px) {
+    :global(.article-prose figure > .scene) {
+      display: flex;
+      flex-direction: column;
+    }
+    :global(.article-prose figure [data-controls]) {
+      order: -1;
+      position: sticky;
+      top: 8px;
+      z-index: 8;
+      align-self: flex-start;
+      margin: 0 0 20px;
+      padding: 6px;
+      background: #202727;
+      border: 1px solid #45594e;
+    }
+
     .article-reading {
       padding-inline: var(--page-gutter);
     }

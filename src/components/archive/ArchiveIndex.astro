@@ -1,0 +1,173 @@
+---
+import { formatShortDate, formatTaxonomy } from '../../lib/format';
+import type { PostView } from '../../lib/post-view';
+import SectionHeading from '../journal/SectionHeading.astro';
+
+type Props = {
+  posts: PostView[];
+};
+
+const { posts } = Astro.props;
+
+const postsByYear = posts.reduce<Record<string, PostView[]>>((years, post) => {
+  const year = String(post.date.getFullYear());
+  years[year] = years[year] ?? [];
+  years[year].push(post);
+  return years;
+}, {});
+---
+
+<section class="archive-index" aria-labelledby="archive-notes">
+  <SectionHeading
+    id="archive-notes"
+    eyebrow="Complete record"
+    title="All notes"
+    meta={`${String(posts.length).padStart(2, '0')} published`}
+  />
+
+  {
+    posts.length > 0 ? (
+      <div class="archive-index__years">
+        {Object.entries(postsByYear).map(([year, yearPosts]) => (
+          <section class="archive-year" aria-labelledby={`year-${year}`}>
+            <h3 id={`year-${year}`}>{year}</h3>
+            <ol>
+              {yearPosts.map((post) => (
+                <li>
+                  <time datetime={post.date.toISOString()}>{formatShortDate(post.date)}</time>
+                  <article>
+                    <h4>
+                      <a href={post.href}>{post.title}</a>
+                    </h4>
+                    <p>{post.description}</p>
+                    {post.tags.length > 0 && (
+                      <ul aria-label={`Topics for ${post.title}`}>
+                        {post.tags.map(formatTaxonomy).map((tag) => (
+                          <li>{tag}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </article>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+      </div>
+    ) : (
+      <p class="archive-index__empty">No notes have been published yet.</p>
+    )
+  }
+</section>
+
+<style>
+  .archive-index__years {
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .archive-year {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: var(--space-5);
+    padding-block: var(--space-5);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  .archive-year > h3 {
+    margin: var(--space-1) 0 0;
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.03em;
+  }
+
+  .archive-year > ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .archive-year > ol > li {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-bottom: var(--space-5);
+  }
+
+  .archive-year > ol > li + li {
+    padding-top: var(--space-5);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  time {
+    padding-top: 0.25rem;
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    white-space: nowrap;
+  }
+
+  article {
+    min-width: 0;
+  }
+
+  h4 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: var(--weight-regular);
+    line-height: var(--line-height-tight);
+  }
+
+  h4 a {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  h4 a:hover {
+    color: var(--color-accent);
+  }
+
+  article > p {
+    max-width: 42rem;
+    margin: var(--space-2) 0 var(--space-3);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    line-height: 1.55;
+    text-wrap: pretty;
+  }
+
+  article ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  article ul li::before {
+    content: '#';
+  }
+
+  .archive-index__empty {
+    margin: 0;
+    padding-block: var(--space-5);
+    border-block: var(--border-thin) solid var(--color-rule);
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+
+  @media (max-width: 620px) {
+    .archive-year,
+    .archive-year > ol > li {
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+    }
+  }
+</style>

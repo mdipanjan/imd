@@ -1,0 +1,62 @@
+---
+import PageIntroduction from '../components/journal/PageIntroduction.astro';
+import PageRail, { type PageRailItem } from '../components/journal/PageRail.astro';
+import JournalLayout from './JournalLayout.astro';
+
+type Props = {
+  title: string;
+  description: string;
+  eyebrow: string;
+  lede: string;
+  contentFirst?: boolean;
+  rail: {
+    title: string;
+    items: PageRailItem[];
+    note?: string;
+  };
+};
+
+const { title, description, eyebrow, lede, rail, contentFirst = false } = Astro.props;
+---
+
+<JournalLayout {title} {description} pageClass="interior-page">
+  <PageIntroduction eyebrow={eyebrow} title={title} lede={lede} />
+  <div
+    class="interior-page__body"
+    class:list={{ 'interior-page__body--content-first': contentFirst }}
+  >
+    <PageRail title={rail.title} items={rail.items} note={rail.note}>
+      <slot name="rail" />
+    </PageRail>
+    <div class="interior-page__content">
+      <slot />
+    </div>
+  </div>
+</JournalLayout>
+
+<style>
+  .interior-page__body {
+    display: grid;
+    grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
+  }
+
+  .interior-page__content {
+    min-width: 0;
+    padding: var(--space-7) var(--journal-edge-inset) var(--space-8)
+      clamp(var(--space-6), 4vw, var(--space-8));
+  }
+
+  @media (max-width: 900px) {
+    .interior-page__body {
+      grid-template-columns: 1fr;
+    }
+
+    .interior-page__body--content-first .interior-page__content {
+      grid-row: 1;
+    }
+
+    .interior-page__content {
+      padding-inline: var(--journal-edge-inset);
+    }
+  }
+</style>

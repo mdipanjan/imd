@@ -1,44 +1,32 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
+import ArchiveIndex from '../components/archive/ArchiveIndex.astro';
+import InteriorPageLayout from '../layouts/InteriorPageLayout.astro';
+import { toPostView } from '../lib/post-view';
 
 const posts = (await getCollection('posts'))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat('en', {
-    month: 'short',
-    day: '2-digit',
-  }).format(date);
-
-const postsByYear = posts.reduce<Record<string, typeof posts>>((years, post) => {
-  const year = String(post.data.date.getFullYear());
-  years[year] = years[year] ?? [];
-  years[year].push(post);
-  return years;
-}, {});
+const postViews = posts.map(toPostView);
+const years = [...new Set(postViews.map((post) => post.date.getFullYear()))];
+const yearRange = years.length > 1 ? `${years.at(-1)}–${years[0]}` : String(years[0] ?? '—');
 ---
 
-<BaseLayout title="Archive" description="All posts grouped by year.">
-  <h1>Archive</h1>
-  <p class="muted">All posts, newest first.</p>
-
-  <div class="archive-list">
-    {
-      Object.entries(postsByYear).map(([year, yearPosts]) => (
-        <section class="archive-year" aria-labelledby={`year-${year}`}>
-          <h2 id={`year-${year}`}>{year}</h2>
-          <ol>
-            {yearPosts.map((post) => (
-              <li>
-                <time datetime={post.data.date.toISOString()}>{formatDate(post.data.date)}</time>
-                <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))
-    }
-  </div>
-</BaseLayout>
+<InteriorPageLayout
+  title="Archive"
+  description="Every published field note, grouped by year."
+  eyebrow="Journal index"
+  lede="Every published note in one quiet chronology—first attempts, later revisions, and the ideas that survived both."
+  rail={{
+    title: 'At a glance',
+    items: [
+      { label: 'Published', value: String(postViews.length).padStart(2, '0') },
+      { label: 'Years', value: yearRange },
+      { label: 'Order', value: 'Newest first' },
+    ],
+    note: 'The archive grows when a note is useful enough to keep.',
+  }}
+>
+  <ArchiveIndex posts={postViews} />
+</InteriorPageLayout>

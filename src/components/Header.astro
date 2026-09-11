@@ -8,22 +8,19 @@ type Props = {
 
 const { variant = 'journal' } = Astro.props;
 const isArticle = variant === 'article';
+const includeDrafts = import.meta.env.DEV;
 
-const latestPost = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+const latestPost = (await getCollection('posts', ({ data }) => !data.draft || includeDrafts)).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 )[0];
 
-const journalNav = [
+const sharedNav = [
   { href: '/', label: 'Index' },
   { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
-  { href: '/about/', label: 'About' },
 ];
 
-const articleNav = [
-  { href: '/', label: 'Index' },
-  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
-  { href: '/archive/', label: 'Revisions' },
-];
+const journalNav = [...sharedNav, { href: '/about/', label: 'About' }];
+const articleNav = [...sharedNav, { href: '/archive/', label: 'Revisions' }];
 
 const nav = isArticle ? articleNav : journalNav;
 

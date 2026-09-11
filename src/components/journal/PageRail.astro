@@ -1,0 +1,102 @@
+---
+export type PageRailItem = {
+  label: string;
+  value: string;
+};
+
+type Props = {
+  title: string;
+  items: PageRailItem[];
+  note?: string;
+};
+
+const { title, items, note } = Astro.props;
+---
+
+<aside class="page-rail" aria-labelledby="page-rail-title">
+  <p id="page-rail-title" class="page-rail__title">{title}</p>
+  <dl>
+    {
+      items.map((item) => (
+        <div>
+          <dt>{item.label}</dt>
+          <dd>{item.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+  {note && <p class="page-rail__note">{note}</p>}
+  <slot />
+</aside>
+
+<style>
+  .page-rail {
+    font-family: var(--font-sidebar);
+    padding: var(--space-7) var(--space-6) var(--space-8) var(--journal-edge-inset);
+    border-right: var(--border-thin) solid var(--color-rule);
+  }
+
+  .page-rail__title {
+    margin: 0 0 var(--space-5);
+    color: var(--color-accent);
+    font-family: var(--font-sidebar);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.07em;
+  }
+
+  dl {
+    margin: 0;
+  }
+
+  dl div {
+    padding-block: var(--space-3);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  dt {
+    margin-bottom: var(--space-1);
+    color: var(--color-text-faint);
+    font-family: var(--font-sidebar);
+    font-size: var(--font-size-label);
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--font-size-small);
+    line-height: 1.5;
+  }
+
+  .page-rail__note {
+    margin: var(--space-7) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    font-style: italic;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 900px) {
+    .page-rail {
+      padding: var(--space-6) var(--journal-edge-inset);
+      border-right: 0;
+      border-bottom: var(--border-thin) solid var(--color-rule);
+    }
+
+    dl {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-4);
+    }
+
+    .page-rail__note {
+      margin-top: var(--space-5);
+    }
+  }
+
+  @media (max-width: 620px) {
+    dl {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+</style>

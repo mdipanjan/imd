@@ -4,8 +4,9 @@ import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { toPostLink, toPostView } from '../../lib/post-view';
 
 export async function getStaticPaths() {
+  const includeDrafts = import.meta.env.DEV;
   const posts = (await getCollection('posts'))
-    .filter((post) => !post.data.draft)
+    .filter((post) => !post.data.draft || includeDrafts)
     .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 
   return posts.map((post, index) => ({

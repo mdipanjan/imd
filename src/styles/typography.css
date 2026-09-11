@@ -18,6 +18,11 @@
   --font-size-heading-3: 1.25rem;
   --font-size-heading-2: clamp(1.6rem, 3vw, 2.25rem);
   --font-size-heading-1: clamp(2.35rem, 4.4vw, 3.75rem);
+  --font-size-interior-heading: clamp(2.15rem, 3.4vw, 3.25rem);
+  --font-size-display-heading: clamp(2.25rem, 3.5vw, 3.8rem);
+
+  /* Sidebar navigation follows the selected heading face, including Workbench mono. */
+  --font-sidebar: var(--font-display);
 
   --line-height-tight: 1.08;
   --line-height-reading: 1.65;

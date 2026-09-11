@@ -7,12 +7,13 @@ type MetadataItem = {
 
 type Props = {
   items: MetadataItem[];
+  compact?: boolean;
 };
 
-const { items } = Astro.props;
+const { items, compact = false } = Astro.props;
 ---
 
-<dl class="metadata-list">
+<dl class="metadata-list" class:list={{ 'metadata-list--compact': compact }}>
   {
     items.map((item) => (
       <div>
@@ -48,10 +49,21 @@ const { items } = Astro.props;
   dt {
     color: var(--color-accent);
     font-weight: var(--weight-medium);
-    text-transform: uppercase;
   }
 
   dd {
     color: var(--color-text-muted);
+  }
+  .metadata-list--compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding: 0;
+    border: 0;
+  }
+  .metadata-list--compact div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
   }
 </style>

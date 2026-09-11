@@ -1,6 +1,6 @@
 ---
 import MetadataList from '../MetadataList.astro';
-import { formatLongDate } from '../../lib/format';
+import { formatLongDate, formatTaxonomy } from '../../lib/format';
 
 type Props = {
   title: string;
@@ -8,33 +8,33 @@ type Props = {
   date: Date;
   updated?: Date;
   tags: string[];
+  draft?: boolean;
 };
 
-const { title, description, date, updated, tags } = Astro.props;
+const { title, description, date, updated, tags, draft = false } = Astro.props;
+const runningLabel = tags.map(formatTaxonomy).join(' / ');
+const displayDate = updated ?? date;
 const metadataItems = [
-  { label: 'Published', value: formatLongDate(date), datetime: date.toISOString() },
-  ...(updated
-    ? [{ label: 'Updated', value: formatLongDate(updated), datetime: updated.toISOString() }]
-    : []),
-  { label: 'Status', value: updated ? 'Revised' : 'First revision' },
-  ...(tags.length > 0 ? [{ label: 'Filed under', value: tags.join(' / ') }] : []),
+  {
+    label: draft ? 'Draft updated' : updated ? 'Updated' : 'Published',
+    value: formatLongDate(displayDate),
+    datetime: displayDate.toISOString(),
+  },
 ];
 ---
 
 <header class="article-header">
-  <p class="article-header__running">
-    {tags[0] ?? 'Field note'} · working note{updated ? ' · revised' : ''}
-  </p>
+  <p class="article-header__running">{runningLabel}</p>
   <h1>{title}</h1>
   <p class="article-header__deck">{description}</p>
-  <MetadataList items={metadataItems} />
+  <MetadataList items={metadataItems} compact />
 </header>
 
 <style>
   .article-header {
     max-width: var(--width-prose);
     margin-inline: auto;
-    padding-bottom: var(--space-5);
+    padding-bottom: 0;
   }
 
   .article-header__running {
@@ -42,12 +42,12 @@ const metadataItems = [
     color: var(--color-text-faint);
     font-family: var(--font-interface);
     font-size: var(--font-size-label);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
 
   h1 {
-    max-width: 16ch;
+    max-width: 22ch;
+    text-wrap: balance;
     margin: 0;
     font-size: clamp(1.9rem, 2.7vw, 2.45rem);
     font-weight: var(--weight-regular);

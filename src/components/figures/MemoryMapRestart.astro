@@ -1,0 +1,728 @@
+---
+interface Props {
+  id?: string;
+}
+
+const { id = 'memory-map' } = Astro.props;
+const titleId = `${id}-title`;
+const descriptionId = `${id}-description`;
+---
+
+<figure class="memory-walkthrough" data-memory-walkthrough data-phase="write" data-playing="false">
+  <header class="memory-walkthrough__header">
+    <div>
+      <p class="memory-walkthrough__eyebrow">From first principles · 01</p>
+      <h3>What survives a restart?</h3>
+    </div>
+    <p class="memory-walkthrough__count" aria-hidden="true">
+      <span data-phase-number>01</span> / 04
+    </p>
+  </header>
+
+  <div class="memory-walkthrough__stage">
+    <svg viewBox="0 0 960 430" role="img" aria-labelledby={`${titleId} ${descriptionId}`}>
+      <title id={titleId}>An account disappears when the application restarts</title>
+      <desc id={descriptionId}>
+        Four phases show an account written to application memory, read successfully, erased by a
+        process restart, and then missing from the next lookup because durable storage is empty.
+      </desc>
+
+      <g class="memory-walkthrough__client">
+        <rect class="node" x="42" y="132" width="188" height="118" rx="3"></rect>
+        <text class="label" x="66" y="166">CLIENT</text>
+        <text class="code" x="66" y="207">account 101</text>
+        <text class="muted" x="66" y="230">Maya Sen · 5000</text>
+      </g>
+
+      <g class="memory-walkthrough__application">
+        <rect class="node application-node" x="300" y="54" width="356" height="272" rx="3"></rect>
+        <text class="label" x="326" y="88">APPLICATION PROCESS</text>
+        <circle class="process-status" cx="620" cy="82" r="4"></circle>
+        <text class="status-label" x="607" y="87" text-anchor="end">RUNNING</text>
+
+        <rect class="node ram-node" x="342" y="126" width="272" height="142" rx="2"></rect>
+        <text class="label" x="366" y="160">RAM · VOLATILE</text>
+        <text class="code" x="366" y="198">accounts</text>
+        <path class="rule" d="M366 214H590"></path>
+
+        <g class="ram-empty">
+          <text class="empty" x="366" y="247">{}</text>
+        </g>
+        <g class="ram-record">
+          <rect x="360" y="226" width="236" height="30" rx="2"></rect>
+          <text class="record-key" x="376" y="247">101</text>
+          <text class="record-value" x="422" y="247">Maya Sen · 5000</text>
+        </g>
+
+        <g class="restart-mark">
+          <path d="M448 109a34 34 0 1 1-14 24"></path>
+          <path d="M425 116l9 17 16-10"></path>
+          <text x="478" y="118" text-anchor="middle">RESTARTING</text>
+        </g>
+      </g>
+
+      <g class="memory-walkthrough__storage">
+        <rect class="node storage-node" x="730" y="132" width="188" height="118" rx="3"></rect>
+        <text class="label" x="754" y="166">DURABLE STORAGE</text>
+        <text class="code empty-store" x="754" y="207">no account record</text>
+        <text class="muted" x="754" y="230">nothing was written</text>
+      </g>
+
+      <path class="connection" d="M230 191H300"></path>
+      <path class="connection connection--dashed" d="M656 191H730"></path>
+      <text class="connection-label" x="694" y="178" text-anchor="middle">NO WRITE</text>
+
+      <g class="phase-scene phase-scene--write" data-scene="write">
+        <path class="active-path" d="M230 191H300"></path>
+        <path class="arrow" d="M288 183l12 8-12 8"></path>
+        <g class="packet packet--write">
+          <rect x="236" y="170" width="52" height="42" rx="2"></rect>
+          <text x="262" y="196" text-anchor="middle">101</text>
+        </g>
+        <text class="event-label" x="264" y="154" text-anchor="middle">POST /accounts</text>
+        <text class="outcome" x="478" y="302" text-anchor="middle">ACKNOWLEDGED IN MEMORY</text>
+      </g>
+
+      <g class="phase-scene phase-scene--read" data-scene="read">
+        <path class="active-path" d="M230 174H300"></path>
+        <path class="arrow" d="M288 166l12 8-12 8"></path>
+        <text class="event-label" x="264" y="153" text-anchor="middle">GET /accounts/101</text>
+        <path class="response-path" d="M300 218H230"></path>
+        <path class="arrow" d="M242 210l-12 8 12 8"></path>
+        <text class="success" x="264" y="242" text-anchor="middle">200 · ACCOUNT 101</text>
+      </g>
+
+      <g class="phase-scene phase-scene--restart" data-scene="restart">
+        <path class="cleared-line" d="M360 226l236 30M596 226l-236 30"></path>
+        <text class="failure" x="478" y="302" text-anchor="middle">RAM IS CLEARED</text>
+      </g>
+
+      <g class="phase-scene phase-scene--lookup" data-scene="lookup">
+        <path class="active-path" d="M230 174H300"></path>
+        <path class="arrow" d="M288 166l12 8-12 8"></path>
+        <text class="event-label" x="264" y="153" text-anchor="middle">GET /accounts/101</text>
+        <path class="response-path response-path--failure" d="M300 218H230"></path>
+        <path class="arrow arrow--failure" d="M242 210l-12 8 12 8"></path>
+        <text class="failure" x="264" y="242" text-anchor="middle">404 · NOT FOUND</text>
+        <path class="storage-emphasis" d="M716 116h216v150H716z"></path>
+      </g>
+
+      <g class="memory-walkthrough__conclusion">
+        <path class="rule" d="M42 368H918"></path>
+        <text class="conclusion-label" x="42" y="398">ACKNOWLEDGED</text>
+        <text class="conclusion-arrow" x="182" y="398">→</text>
+        <text class="conclusion-label" x="214" y="398">NOT DURABLE</text>
+        <text class="conclusion-note" x="918" y="398" text-anchor="end">
+          process memory is not a storage engine
+        </text>
+      </g>
+    </svg>
+  </div>
+
+  <nav class="memory-walkthrough__phases" aria-label="Memory sequence phases">
+    <button type="button" data-phase-target="write" aria-pressed="true">
+      <span>01</span>
+      Write
+    </button>
+    <button type="button" data-phase-target="read" aria-pressed="false">
+      <span>02</span>
+      Read
+    </button>
+    <button type="button" data-phase-target="restart" aria-pressed="false">
+      <span>03</span>
+      Restart
+    </button>
+    <button type="button" data-phase-target="lookup" aria-pressed="false">
+      <span>04</span>
+      Lookup
+    </button>
+  </nav>
+
+  <div class="memory-walkthrough__explanation">
+    <p data-phase-copy aria-live="polite">
+      The service accepts account 101 and keeps the record in its in-memory map.
+    </p>
+    <div class="memory-walkthrough__transport" aria-label="Sequence playback controls">
+      <button type="button" data-action="previous" aria-label="Previous phase" disabled>
+        <span aria-hidden="true">←</span> Back
+      </button>
+      <button type="button" data-action="playback" aria-label="Play sequence">
+        <span data-playback-icon aria-hidden="true">▶</span>
+        <span data-playback-label>Play</span>
+      </button>
+      <button type="button" data-action="next" aria-label="Next phase">
+        Next <span aria-hidden="true">→</span>
+      </button>
+    </div>
+  </div>
+
+  <figcaption>
+    The same record is visible, then absent. Use the phases to inspect the exact moment the promise
+    breaks.
+  </figcaption>
+</figure>
+
+<script>
+  const phases = [
+    {
+      name: 'write',
+      copy: 'The service accepts account 101 and keeps the record in its in-memory map.',
+    },
+    {
+      name: 'read',
+      copy: 'A lookup succeeds because the same process can still see the record in RAM.',
+    },
+    {
+      name: 'restart',
+      copy: 'The process restarts. Its volatile map returns empty; durable storage has no copy.',
+    },
+    {
+      name: 'lookup',
+      copy: 'The next lookup fails. The write was acknowledged, but it was never made durable.',
+    },
+  ];
+
+  document.querySelectorAll<HTMLElement>('[data-memory-walkthrough]').forEach((walkthrough) => {
+    if (walkthrough.dataset.ready === 'true') return;
+    walkthrough.dataset.ready = 'true';
+
+    const phaseButtons = Array.from(
+      walkthrough.querySelectorAll<HTMLButtonElement>('[data-phase-target]'),
+    );
+    const previousButton = walkthrough.querySelector<HTMLButtonElement>('[data-action="previous"]');
+    const playbackButton = walkthrough.querySelector<HTMLButtonElement>('[data-action="playback"]');
+    const nextButton = walkthrough.querySelector<HTMLButtonElement>('[data-action="next"]');
+    const phaseNumber = walkthrough.querySelector<HTMLElement>('[data-phase-number]');
+    const phaseCopy = walkthrough.querySelector<HTMLElement>('[data-phase-copy]');
+    const playbackIcon = walkthrough.querySelector<HTMLElement>('[data-playback-icon]');
+    const playbackLabel = walkthrough.querySelector<HTMLElement>('[data-playback-label]');
+
+    if (
+      !previousButton ||
+      !playbackButton ||
+      !nextButton ||
+      !phaseNumber ||
+      !phaseCopy ||
+      !playbackIcon ||
+      !playbackLabel
+    ) {
+      return;
+    }
+
+    let phaseIndex = 0;
+    let isPlaying = false;
+    let playbackTimer: number | undefined;
+
+    const stopPlayback = () => {
+      window.clearTimeout(playbackTimer);
+      playbackTimer = undefined;
+      isPlaying = false;
+      walkthrough.dataset.playing = 'false';
+      playbackIcon.textContent = '▶';
+      playbackLabel.textContent = 'Play';
+      playbackButton.setAttribute('aria-label', 'Play sequence');
+    };
+
+    const render = () => {
+      const phase = phases[phaseIndex];
+      walkthrough.dataset.phase = phase.name;
+      walkthrough.dataset.playing = String(isPlaying);
+      phaseNumber.textContent = String(phaseIndex + 1).padStart(2, '0');
+      phaseCopy.textContent = phase.copy;
+      previousButton.disabled = phaseIndex === 0;
+      nextButton.disabled = phaseIndex === phases.length - 1;
+
+      phaseButtons.forEach((button, index) => {
+        const isCurrent = index === phaseIndex;
+        button.setAttribute('aria-pressed', String(isCurrent));
+        if (isCurrent) button.setAttribute('aria-current', 'step');
+        else button.removeAttribute('aria-current');
+      });
+    };
+
+    const scheduleNextPhase = () => {
+      window.clearTimeout(playbackTimer);
+      if (!isPlaying) return;
+
+      if (phaseIndex === phases.length - 1) {
+        stopPlayback();
+        render();
+        return;
+      }
+
+      playbackTimer = window.setTimeout(() => {
+        phaseIndex += 1;
+        render();
+        scheduleNextPhase();
+      }, 2200);
+    };
+
+    const startPlayback = () => {
+      if (phaseIndex === phases.length - 1) phaseIndex = 0;
+      isPlaying = true;
+      playbackIcon.textContent = 'Ⅱ';
+      playbackLabel.textContent = 'Pause';
+      playbackButton.setAttribute('aria-label', 'Pause sequence');
+      render();
+      scheduleNextPhase();
+    };
+
+    phaseButtons.forEach((button, index) => {
+      button.addEventListener('click', () => {
+        stopPlayback();
+        phaseIndex = index;
+        render();
+      });
+    });
+
+    previousButton.addEventListener('click', () => {
+      stopPlayback();
+      phaseIndex = Math.max(0, phaseIndex - 1);
+      render();
+    });
+
+    nextButton.addEventListener('click', () => {
+      stopPlayback();
+      phaseIndex = Math.min(phases.length - 1, phaseIndex + 1);
+      render();
+    });
+
+    playbackButton.addEventListener('click', () => {
+      if (isPlaying) {
+        stopPlayback();
+        render();
+      } else {
+        startPlayback();
+      }
+    });
+
+    render();
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((entry) => entry.isIntersecting)) return;
+          startPlayback();
+          observer.disconnect();
+        },
+        { threshold: 0.45 },
+      );
+      observer.observe(walkthrough);
+    }
+  });
+</script>
+
+<style>
+  .memory-walkthrough {
+    display: grid;
+    margin: var(--space-7) 0;
+    border-block: var(--border-thin) solid var(--color-rule);
+    color: var(--color-text);
+  }
+
+  .memory-walkthrough__header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    align-items: end;
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .memory-walkthrough__eyebrow,
+  .memory-walkthrough__count,
+  .memory-walkthrough__header h3 {
+    margin: 0;
+  }
+
+  .memory-walkthrough__eyebrow,
+  .memory-walkthrough__count {
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  .memory-walkthrough__header h3 {
+    margin-top: var(--space-1);
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.2vw, 1.55rem);
+    font-weight: var(--weight-medium);
+    letter-spacing: -0.025em;
+  }
+
+  .memory-walkthrough__count {
+    white-space: nowrap;
+  }
+
+  .memory-walkthrough__stage {
+    overflow: hidden;
+    border-block: var(--border-thin) solid var(--color-rule);
+    background: color-mix(in srgb, var(--color-surface) 96%, var(--color-accent));
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    color: var(--color-text);
+  }
+
+  text {
+    fill: currentColor;
+    font-family: var(--font-mono);
+    font-size: 14px;
+  }
+
+  .node,
+  .rule,
+  .connection,
+  .active-path,
+  .response-path,
+  .packet rect,
+  .ram-record rect,
+  .restart-mark path,
+  .cleared-line,
+  .storage-emphasis {
+    fill: none;
+    stroke: var(--color-rule);
+    stroke-width: 1.2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .application-node {
+    fill: var(--color-surface);
+  }
+
+  .ram-node {
+    fill: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+    stroke: var(--color-accent);
+  }
+
+  .storage-node {
+    fill: color-mix(in srgb, var(--color-surface) 98%, var(--color-text));
+  }
+
+  .label,
+  .status-label,
+  .connection-label,
+  .event-label,
+  .outcome,
+  .success,
+  .failure,
+  .conclusion-label {
+    font-family: var(--font-interface);
+    font-size: 12px;
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.055em;
+  }
+
+  .label,
+  .status-label,
+  .outcome,
+  .success,
+  .conclusion-label {
+    fill: var(--color-accent);
+  }
+
+  .connection-label,
+  .event-label,
+  .muted,
+  .conclusion-note {
+    fill: var(--color-text-faint);
+  }
+
+  .code {
+    font-size: 13px;
+  }
+
+  .muted,
+  .conclusion-note {
+    font-size: 12px;
+  }
+
+  .process-status {
+    fill: var(--color-accent);
+  }
+
+  .connection {
+    stroke: var(--color-rule);
+  }
+
+  .connection--dashed {
+    stroke-dasharray: 4 6;
+  }
+
+  .active-path,
+  .response-path,
+  .packet rect,
+  .ram-record rect {
+    stroke: var(--color-accent);
+  }
+
+  .packet rect,
+  .ram-record rect {
+    fill: var(--color-surface);
+  }
+
+  .packet text,
+  .record-key {
+    fill: var(--color-accent);
+    font-weight: var(--weight-medium);
+  }
+
+  .record-value {
+    fill: var(--color-text-muted);
+    font-size: 12px;
+  }
+
+  .empty {
+    fill: var(--color-text-faint);
+    font-size: 18px;
+  }
+
+  .arrow {
+    fill: var(--color-accent);
+  }
+
+  .failure,
+  .restart-mark text {
+    fill: var(--color-revision);
+    font-family: var(--font-interface);
+    font-size: 12px;
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.055em;
+  }
+
+  .restart-mark path,
+  .cleared-line,
+  .response-path--failure,
+  .storage-emphasis {
+    stroke: var(--color-revision);
+  }
+
+  .arrow--failure {
+    fill: var(--color-revision);
+  }
+
+  .storage-emphasis {
+    stroke-dasharray: 4 5;
+  }
+
+  .phase-scene,
+  .restart-mark,
+  .ram-record,
+  .ram-empty {
+    opacity: 0;
+    transition:
+      opacity 280ms ease,
+      transform 380ms ease;
+  }
+
+  .phase-scene {
+    transform: translateY(4px);
+  }
+
+  .ram-record {
+    transform: translateY(3px);
+  }
+
+  [data-phase='write'] .phase-scene--write,
+  [data-phase='read'] .phase-scene--read,
+  [data-phase='restart'] .phase-scene--restart,
+  [data-phase='lookup'] .phase-scene--lookup,
+  [data-phase='restart'] .restart-mark,
+  [data-phase='write'] .ram-record,
+  [data-phase='read'] .ram-record,
+  [data-phase='restart'] .ram-empty,
+  [data-phase='lookup'] .ram-empty {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  [data-phase='write'] .packet--write {
+    animation: record-transfer 900ms cubic-bezier(0.35, 0, 0.2, 1) both;
+  }
+
+  [data-phase='restart'] .process-status,
+  [data-phase='restart'] .status-label {
+    opacity: 0.2;
+  }
+
+  .memory-walkthrough__phases {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .memory-walkthrough__phases button,
+  .memory-walkthrough__transport button {
+    appearance: none;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--color-text-muted);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .memory-walkthrough__phases button {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+    padding: 0.72rem var(--space-3);
+    border-right: var(--border-thin) solid var(--color-rule);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    text-align: left;
+  }
+
+  .memory-walkthrough__phases button:last-child {
+    border-right: 0;
+  }
+
+  .memory-walkthrough__phases button span {
+    color: var(--color-text-faint);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+  }
+
+  .memory-walkthrough__phases button:hover {
+    background: var(--color-accent-soft);
+    color: var(--color-text);
+  }
+
+  .memory-walkthrough__phases button[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    color: var(--color-accent);
+    box-shadow: inset 0 -2px 0 var(--color-accent);
+  }
+
+  .memory-walkthrough__phases button[aria-pressed='true'] span {
+    color: currentColor;
+  }
+
+  .memory-walkthrough__explanation {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-4);
+    align-items: center;
+    min-height: 4.4rem;
+    padding: var(--space-3) var(--space-4);
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .memory-walkthrough__explanation > p {
+    max-width: 62ch;
+    margin: 0;
+    color: var(--color-text-muted);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    line-height: 1.5;
+  }
+
+  .memory-walkthrough__transport {
+    display: flex;
+    align-items: center;
+    border: var(--border-thin) solid var(--color-rule);
+  }
+
+  .memory-walkthrough__transport button {
+    min-height: 2.15rem;
+    padding: 0.35rem 0.68rem;
+    border-right: var(--border-thin) solid var(--color-rule);
+    font-family: var(--font-interface);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .memory-walkthrough__transport button:last-child {
+    border-right: 0;
+  }
+
+  .memory-walkthrough__transport button:hover:not(:disabled) {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+
+  .memory-walkthrough__transport button:disabled {
+    cursor: default;
+    opacity: 0.35;
+  }
+
+  figcaption {
+    max-width: 66ch;
+    margin: 0;
+    padding-top: var(--space-2);
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    line-height: 1.55;
+  }
+
+  @keyframes record-transfer {
+    from {
+      opacity: 0;
+      transform: translateX(-8px);
+    }
+    35% {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+      transform: translateX(64px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .memory-walkthrough * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .memory-walkthrough__header,
+    .memory-walkthrough__explanation {
+      padding-inline: var(--space-3);
+    }
+
+    .memory-walkthrough__stage {
+      overflow-x: auto;
+    }
+
+    svg {
+      width: 46rem;
+      max-width: none;
+    }
+
+    .memory-walkthrough__phases {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .memory-walkthrough__phases button:nth-child(2) {
+      border-right: 0;
+    }
+
+    .memory-walkthrough__phases button:nth-child(-n + 2) {
+      border-bottom: var(--border-thin) solid var(--color-rule);
+    }
+
+    .memory-walkthrough__explanation {
+      grid-template-columns: 1fr;
+    }
+
+    .memory-walkthrough__transport {
+      width: fit-content;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .memory-walkthrough {
+      margin-inline: calc(-1 * var(--space-2));
+    }
+
+    figcaption {
+      padding-inline: var(--space-2);
+    }
+  }
+</style>

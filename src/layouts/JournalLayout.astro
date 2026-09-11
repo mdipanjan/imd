@@ -1,0 +1,31 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+type Props = {
+  title?: string;
+  description: string;
+  pageClass: string;
+};
+
+const { title, description, pageClass } = Astro.props;
+---
+
+<BaseLayout {title} {description} mainClass={`journal-page ${pageClass}`}>
+  <div class="journal-canvas">
+    <slot />
+  </div>
+</BaseLayout>
+
+<style>
+  :global(main.journal-page) {
+    padding: clamp(3rem, 5vw, 4.8rem) 0;
+    border-inline: 0;
+  }
+
+  .journal-canvas {
+    --journal-edge-inset: var(--space-5);
+
+    width: min(90rem, 100%);
+    margin-inline: auto;
+  }
+</style>

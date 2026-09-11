@@ -14,8 +14,7 @@ test('the landing page composes the approved journal sections from reusable comp
   }
 
   assert.match(home, /postViews\.slice\(1, POSTS_PER_PAGE\)/);
-  assert.match(layout, /main\.home-page/);
-  assert.match(layout, /padding: clamp\(3rem, 5vw, 4\.8rem\) 0/);
+  assert.match(layout, /<JournalLayout/);
 });
 
 test('the landing rails keep text away from both outer canvas edges', async () => {
@@ -23,9 +22,9 @@ test('the landing rails keep text away from both outer canvas edges', async () =
   const layout = await readSource('src/layouts/HomeLayout.astro');
   const focus = await readSource('src/components/home/CurrentFocus.astro');
 
-  assert.match(layout, /--home-edge-inset: var\(--space-5\)/);
-  assert.match(focus, /padding:[^;]*var\(--home-edge-inset\)/);
-  assert.match(home, /padding-right: var\(--home-edge-inset\)/);
+  assert.match(layout, /pageClass="home-page"/);
+  assert.match(focus, /<PageRail/);
+  assert.match(home, /padding-right: var\(--journal-edge-inset\)/);
 });
 
 test('featured post taxonomy uses readable theme-coloured labels', async () => {
@@ -83,9 +82,9 @@ test('ordinary article metadata lives in the header rather than the annotation r
   const rail = await readSource('src/components/article/AnnotationRail.astro');
 
   assert.match(schema, /annotations: z\s*\.array/);
-  assert.match(header, /Status/);
-  assert.match(header, /Filed under/);
-  assert.match(header, /<MetadataList items=\{metadataItems\} \/>/);
+  assert.match(header, /Draft updated/);
+  assert.match(header, /tags.map\(formatTaxonomy\)/);
+  assert.match(header, /<MetadataList items=\{metadataItems\} compact \/>/);
   assert.doesNotMatch(rail, /First published revision/);
   assert.doesNotMatch(rail, /Filed under/);
 });

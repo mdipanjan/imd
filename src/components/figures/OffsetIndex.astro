@@ -1,0 +1,610 @@
+---
+import { initialRecords, locateRecords } from './offset-index.mjs';
+---
+
+<figure class="offset-demo" data-offset-demo>
+  <div class="scene">
+    <div class="composition" data-composition>
+      <div class="index-side">
+        <div class="location-label">RAM</div>
+        <div class="index-box">
+          <div class="file-heading">latest offset</div>
+          <div class="index-columns"><span>account</span><span>byte offset</span></div>
+          <div data-index class="index-rows">
+            <div data-key="101"><span>101</span><span data-offset>60</span></div>
+            <div data-key="205"><span>205</span><span data-offset>20</span></div>
+            <div data-key="310"><span>310</span><span data-offset>40</span></div>
+          </div>
+        </div>
+        <div class="read-result">
+          <span>GET /accounts/101</span><strong data-result>—</strong><span data-read-note
+            >Follow the index to read one record.</span
+          >
+        </div>
+      </div>
+      <svg class="route" data-route aria-hidden="true"><path data-path pathLength="1"></path></svg>
+      <div class="file-side">
+        <div class="location-label">DURABLE STORAGE</div>
+        <div class="file">
+          <div class="file-heading">accounts.log</div>
+          <div class="columns" aria-hidden="true">
+            <span>byte</span><span>ID</span><span>name</span><span>balance</span>
+          </div>
+          <ol class="records" data-records aria-label="Log records with byte offsets">
+            {
+              locateRecords(initialRecords()).map((record) => (
+                <li data-byte={record.offset}>
+                  <>
+                    <span>{record.offset}</span>
+                    <span>{record.id}</span>
+                    <span>{record.name}</span>
+                    <span>{record.balance}</span>
+                  </>
+                </li>
+              ))
+            }
+          </ol>
+          <div class="end">end of file</div>
+        </div>
+      </div>
+    </div>
+    <div class="controls" data-controls hidden>
+      <button type="button" data-play aria-pressed="false">Play</button>
+      <button type="button" data-next>Next →</button>
+    </div>
+    <p class="status" data-status role="status" aria-live="polite">
+      Account 101 points to byte 60, where Maya’s balance is ₹6,000.
+    </p>
+  </div>
+  <figcaption>
+    The index stores locations, not account records. A deposit appends a version and changes its
+    pointer. Restart clears the index; rebuilding scans the unchanged log. Depth shows logical
+    grouping, not a physical disk layout.
+  </figcaption>
+  <noscript
+    ><p>
+      Reading account 101 jumps to byte 60. A ₹500 deposit appends balance 6500 at byte 80, then
+      updates the index. On restart a full scan reconstructs these locations.
+    </p></noscript
+  >
+</figure>
+<script>
+  import { reserveSpace, reserveRows } from './figure-space.mjs';
+  import { bindPlayback } from './figure-playback.mjs';
+  import { initialRecords, locateRecords, rebuildIndex, depositRecord } from './offset-index.mjs';
+  document.querySelectorAll<HTMLElement>('[data-offset-demo]').forEach((figure) => {
+    if (figure.dataset.ready) return;
+    figure.dataset.ready = 'true';
+    const rows = figure.querySelector<HTMLOListElement>('[data-records]')!;
+    const indexRows = figure.querySelector<HTMLElement>('[data-index]')!;
+    const status = figure.querySelector<HTMLElement>('[data-status]')!;
+    const result = figure.querySelector<HTMLElement>('[data-result]')!;
+    const note = figure.querySelector<HTMLElement>('[data-read-note]')!;
+    const path = figure.querySelector<SVGPathElement>('[data-path]')!;
+    const route = figure.querySelector<SVGSVGElement>('[data-route]')!;
+    const composition = figure.querySelector<HTMLElement>('[data-composition]')!;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let records = initialRecords();
+    let index = rebuildIndex(records);
+    let pointedOffset: number | null = null;
+
+    function clearMarks() {
+      figure.querySelectorAll('.marked').forEach((el) => el.classList.remove('marked'));
+      pointedOffset = null;
+      path.setAttribute('d', '');
+      path.getAnimations().forEach((animation) => animation.cancel());
+    }
+    function drawRoute() {
+      if (pointedOffset === null) return;
+      const start = indexRows.querySelector<HTMLElement>('[data-key="101"]');
+      const target = rows.querySelector<HTMLElement>(`[data-byte="${pointedOffset}"]`);
+      if (!start || !target) return;
+      const c = composition.getBoundingClientRect();
+      const a = start.getBoundingClientRect();
+      const b = target.getBoundingClientRect();
+      route.setAttribute('viewBox', `0 0 ${c.width} ${c.height}`);
+      if (b.left > a.right) {
+        const x = a.right - c.left + 2,
+          y = a.top - c.top + a.height / 2,
+          endX = b.left - c.left - 3,
+          endY = b.top - c.top + b.height / 2,
+          mid = (x + endX) / 2;
+        path.setAttribute(
+          'd',
+          `M${x} ${y} C${mid} ${y} ${mid} ${endY} ${endX} ${endY} m-6 -4 6 4-6 4`,
+        );
+      } else {
+        const x = a.left - c.left - 5,
+          y = a.top - c.top + a.height / 2,
+          endX = b.left - c.left - 3,
+          endY = b.top - c.top + b.height / 2;
+        path.setAttribute('d', `M${x} ${y} H2 V${endY} H${endX} m-6 -4 6 4-6 4`);
+      }
+    }
+    function traceRoute() {
+      if (reduced.matches) return;
+      path.getAnimations().forEach((animation) => animation.cancel());
+      path.animate(
+        [
+          { strokeDasharray: '1', strokeDashoffset: '1' },
+          { strokeDasharray: '1', strokeDashoffset: '0' },
+        ],
+        { duration: 650, easing: 'ease-in-out' },
+      );
+    }
+    function renderIndex() {
+      indexRows.replaceChildren(
+        ...[101, 205, 310].map((id) => {
+          const row = document.createElement('div');
+          row.dataset.key = String(id);
+          const key = document.createElement('span');
+          key.textContent = String(id);
+          const offset = document.createElement('span');
+          offset.textContent = index.has(id) ? String(index.get(id)) : '—';
+          row.append(key, offset);
+          return row;
+        }),
+      );
+    }
+    function renderLog() {
+      rows.replaceChildren(
+        ...locateRecords(records).map((record) => {
+          const row = document.createElement('li');
+          row.dataset.byte = String(record.offset);
+          for (const value of [record.offset, record.id, record.name, record.balance]) {
+            const cell = document.createElement('span');
+            cell.textContent = String(value);
+            row.append(cell);
+          }
+          return row;
+        }),
+      );
+    }
+    function later(action: () => void, delay = 800) {
+      playback.later(action, reduced.matches ? Math.min(delay, 200) : delay);
+    }
+    function read(done?: () => void) {
+      clearMarks();
+      const offset = index.get(101)!;
+      indexRows.querySelector('[data-key="101"]')!.classList.add('marked');
+      pointedOffset = offset;
+      drawRoute();
+      traceRoute();
+      result.textContent = '—';
+      note.textContent = `Index: 101 → byte ${offset}`;
+      later(() => {
+        const record = locateRecords(records).find((row) => row.offset === offset)!;
+        rows.querySelector(`[data-byte="${offset}"]`)!.classList.add('marked');
+        result.textContent = String(record.balance);
+        note.textContent = '1 record read · no full scan';
+        status.textContent = `Read byte ${offset}: Maya’s balance is ₹${record.balance.toLocaleString('en-IN')}. Older versions were skipped.`;
+        done?.();
+      });
+    }
+    function append(done?: () => void) {
+      clearMarks();
+      result.textContent = '—';
+      const oldOffset = index.get(101)!;
+      records = depositRecord(records);
+      renderLog();
+      rows.lastElementChild!.classList.add('appended', 'marked');
+      rows.lastElementChild!.animate(
+        [
+          { transform: 'translateY(-24px)', opacity: 0 },
+          { transform: 'translateY(0)', opacity: 1 },
+        ],
+        { duration: reduced.matches ? 0 : 750, easing: 'ease-out' },
+      );
+      const newest = locateRecords(records).at(-1)!;
+      note.textContent = `Append at byte ${newest.offset}`;
+      status.textContent = 'Append the new record, then sync before confirming the update.';
+      later(() => {
+        index.set(101, newest.offset);
+        renderIndex();
+        indexRows.querySelector('[data-key="101"]')!.classList.add('marked');
+        pointedOffset = newest.offset;
+        drawRoute();
+        traceRoute();
+        note.textContent = `Index moved: ${oldOffset} → ${newest.offset}`;
+        status.textContent = `Sync succeeded in this example. Index now points to byte ${newest.offset}; balance ₹${newest.balance.toLocaleString('en-IN')}.`;
+        done?.();
+      }, 1000);
+    }
+    function rebuild(done?: () => void) {
+      clearMarks();
+      index = new Map();
+      renderIndex();
+      result.textContent = '—';
+      note.textContent = 'Process restarted · index empty';
+      status.textContent = 'The log survives. Scan it from the beginning to rebuild RAM.';
+      const located = locateRecords(records);
+      let position = 0;
+      function step() {
+        clearMarks();
+        const record = located[position];
+        rows.children[position].classList.add('marked');
+        index.set(record.id, record.offset);
+        renderIndex();
+        indexRows.querySelector(`[data-key="${record.id}"]`)!.classList.add('marked');
+        note.textContent = `Rebuilding: record ${position + 1} of ${located.length}`;
+        position++;
+        later(() => {
+          if (position < located.length) {
+            step();
+            return;
+          }
+          clearMarks();
+          note.textContent = `Index restored · ${located.length} records scanned`;
+          status.textContent = `Rebuild complete. Account 101 points to byte ${index.get(101)} again.`;
+          done?.();
+        }, 650);
+      }
+      later(step, 900);
+    }
+    function restore() {
+      records = initialRecords();
+      index = rebuildIndex(records);
+      renderLog();
+      renderIndex();
+      clearMarks();
+      result.textContent = '—';
+      note.textContent = 'Follow the index to read one record.';
+      status.textContent = 'Account 101 points to byte 60, where Maya’s balance is ₹6,000.';
+    }
+    reserveRows(rows, 5);
+    reserveRows(indexRows, 3);
+    reserveSpace(status, [
+      'Account 101 points to byte 60, where Maya’s balance is ₹6,000.',
+      'Read byte 80: Maya’s balance is ₹6,500. Older versions were skipped.',
+      'Append the new record, then sync before confirming the update.',
+      'Sync succeeded in this example. Index now points to byte 80; balance ₹6,500.',
+      'The log survives. Scan it from the beginning to rebuild RAM.',
+      'Rebuild complete. Account 101 points to byte 80 again.',
+    ]);
+    reserveSpace(note, [
+      'Follow the index to read one record.',
+      'Index: 101 → byte 80',
+      '1 record read · no full scan',
+      'Process restarted · index empty',
+      'Rebuilding: record 5 of 5',
+      'Index restored · 5 records scanned',
+    ]);
+    const playback = bindPlayback(
+      figure,
+      [
+        () => new Promise<void>((resolve) => read(resolve)),
+        () => new Promise<void>((resolve) => append(resolve)),
+        () => new Promise<void>((resolve) => read(resolve)),
+        () => new Promise<void>((resolve) => rebuild(resolve)),
+      ],
+      restore,
+    );
+    new ResizeObserver(drawRoute).observe(composition);
+  });
+</script>
+<style>
+  .offset-demo {
+    margin: var(--space-7) 0;
+  }
+  .scene {
+    --ink: #ede9df;
+    --muted: #a8b9b3;
+    --accent: #a9cbb9;
+    --rule: #4b6058;
+    background: #202727;
+    color: var(--ink);
+    padding: clamp(16px, 4vw, 32px);
+    font:
+      13px 'Helvetica Neue',
+      sans-serif;
+  }
+  .composition {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(135px, 0.8fr) minmax(0, 1.5fr);
+    gap: 48px;
+    align-items: start;
+  }
+  .location-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+  .index-box,
+  .file {
+    padding: 14px;
+    border: 1px solid var(--rule);
+    background: #242e2b;
+    border-radius: 3px;
+  }
+  .file {
+    border-top-right-radius: 14px;
+  }
+  .file-heading {
+    font:
+      14px Menlo,
+      monospace;
+    margin-bottom: 16px;
+  }
+  .index-columns,
+  .index-rows :global(div) {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 4px;
+    border-bottom: 1px solid #34423d;
+  }
+  .index-columns {
+    font-size: 10px;
+    color: var(--muted);
+  }
+  .index-rows :global(div) {
+    font:
+      12px Menlo,
+      monospace;
+  }
+  .columns,
+  .records :global(li) {
+    display: grid;
+    grid-template-columns: 28px 30px minmax(58px, 1fr) 49px;
+    gap: 6px;
+    padding: 10px 3px;
+  }
+  .columns {
+    font-size: 10px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+  }
+  .records {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .records :global(li) {
+    font:
+      11px Menlo,
+      monospace;
+    border-bottom: 1px solid #34423d;
+  }
+  .records :global(li span:last-child),
+  .columns span:last-child {
+    text-align: right;
+  }
+  .records :global(li span:first-child) {
+    color: var(--muted);
+  }
+  .scene :global(.marked) {
+    background: #3a5044;
+    outline: 1px solid var(--accent);
+  }
+  .records :global(.appended) {
+    animation: append-row 450ms ease-out;
+  }
+  .end {
+    padding-top: 14px;
+    color: var(--muted);
+    font:
+      11px Menlo,
+      monospace;
+  }
+  .read-result {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 22px;
+    color: var(--muted);
+    font:
+      11px Menlo,
+      monospace;
+    line-height: 1.5;
+  }
+  .read-result strong {
+    font:
+      28px Menlo,
+      monospace;
+    color: var(--accent);
+  }
+  .route {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .route path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 1.2;
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .controls[hidden] {
+    display: none;
+  }
+  button {
+    min-height: 44px;
+    padding: 9px 12px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--ink);
+    font:
+      12px Menlo,
+      monospace;
+    cursor: pointer;
+  }
+  button:first-child,
+  button[aria-pressed='true'] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  button:hover:not(:disabled) {
+    background: #293332;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .status {
+    min-height: 3em;
+    margin: 18px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  figcaption {
+    margin-top: var(--space-3);
+    font-size: 0.85em;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+  @keyframes append-row {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (max-width: 620px) {
+    .composition {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    .index-side {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 20px;
+    }
+    .index-side .location-label {
+      grid-column: 1/-1;
+    }
+    .read-result {
+      margin-top: 0;
+      justify-content: center;
+    }
+  }
+  /* Shallow extrusions keep the data plane facing the reader. */
+  .composition {
+    padding: 18px 14px 14px 4px;
+  }
+  .index-side {
+    padding-top: 28px;
+  }
+  .index-box,
+  .file {
+    position: relative;
+    border-radius: 1px;
+    box-shadow:
+      8px 12px 0 #18211e,
+      14px 22px 22px #10191655;
+  }
+  .index-box::before,
+  .file::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: -11px;
+    height: 10px;
+    background: #35463e;
+    border: 1px solid #61776b;
+    transform: skewX(-42deg);
+    transform-origin: bottom left;
+  }
+  .index-box::after,
+  .file::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    right: -11px;
+    width: 10px;
+    background: #1b2521;
+    border: 1px solid var(--rule);
+    transform: skewY(-48deg);
+    transform-origin: top left;
+  }
+  .file {
+    background: #27322d;
+  }
+  .index-box {
+    background: #2c3b33;
+  }
+  .index-rows :global(div),
+  .records :global(li) {
+    position: relative;
+    background: #293831;
+    border: 1px solid #45594e;
+    margin-top: 7px;
+    padding-inline: 5px;
+    box-shadow: none;
+  }
+  .records :global(li) {
+    background: #2b3731;
+  }
+  .scene :global(.marked) {
+    background: #425c4c;
+    border-color: var(--accent);
+    outline: none;
+    box-shadow: none;
+  }
+  .route {
+    z-index: 3;
+  }
+  .route path {
+    stroke-width: 1.6;
+    filter: drop-shadow(0 2px 1px #101a15);
+  }
+  .controls {
+    margin-top: 32px;
+  }
+  @media (max-width: 620px) {
+    .composition {
+      padding: 14px 12px 12px 4px;
+      gap: 32px;
+    }
+    .index-side {
+      padding-top: 0;
+    }
+    .location-label {
+      margin-bottom: 14px;
+    }
+    .composition {
+      gap: 24px;
+    }
+    .index-box,
+    .file {
+      padding: 10px;
+    }
+    .file-heading {
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .index-columns,
+    .columns {
+      padding-block: 6px;
+    }
+    .index-rows :global(div),
+    .records :global(li) {
+      padding-block: 6px;
+      margin-top: 4px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .records :global(.appended) {
+      animation: none;
+    }
+  }
+</style>

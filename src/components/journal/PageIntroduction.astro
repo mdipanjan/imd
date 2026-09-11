@@ -1,0 +1,88 @@
+---
+type Props = {
+  eyebrow: string;
+  title: string;
+  lede: string;
+  scale?: 'display' | 'page';
+  measure?: 'compact' | 'wide';
+};
+
+const { eyebrow, title, lede, scale = 'page', measure = 'wide' } = Astro.props;
+---
+
+<header
+  class:list={['page-introduction', `page-introduction--${scale}`, `page-introduction--${measure}`]}
+>
+  <p class="page-introduction__eyebrow">{eyebrow}</p>
+  <div>
+    <h1>{title}</h1>
+    <p class="page-introduction__lede">{lede}</p>
+  </div>
+</header>
+
+<style>
+  .page-introduction {
+    display: grid;
+    grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
+    padding-bottom: clamp(var(--space-7), 5vw, var(--space-8));
+    border-bottom: var(--border-thin) solid var(--color-rule);
+  }
+
+  .page-introduction__eyebrow {
+    margin: var(--space-2) 0 0;
+    padding-inline: var(--journal-edge-inset) var(--space-6);
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.07em;
+  }
+
+  .page-introduction > div {
+    padding-right: var(--journal-edge-inset);
+  }
+
+  h1 {
+    max-width: 18ch;
+    margin: 0;
+    font-size: var(--font-size-interior-heading);
+    font-weight: var(--weight-regular);
+    letter-spacing: -0.04em;
+    text-wrap: balance;
+  }
+
+  .page-introduction--display h1 {
+    font-size: var(--font-size-display-heading);
+    letter-spacing: -0.045em;
+  }
+
+  .page-introduction--compact h1 {
+    max-width: 15ch;
+  }
+
+  .page-introduction__lede {
+    max-width: 41rem;
+    margin: var(--space-5) 0 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-lede);
+    line-height: var(--line-height-reading);
+    text-wrap: pretty;
+  }
+
+  .page-introduction--display .page-introduction__lede {
+    max-width: 38rem;
+    margin-top: var(--space-6);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-body);
+  }
+
+  @media (max-width: 900px) {
+    .page-introduction {
+      grid-template-columns: 1fr;
+      gap: var(--space-4);
+    }
+
+    .page-introduction > div {
+      padding-inline: var(--journal-edge-inset);
+    }
+  }
+</style>

@@ -1,0 +1,150 @@
+---
+import SectionHeading from '../components/journal/SectionHeading.astro';
+import InteriorPageLayout from '../layouts/InteriorPageLayout.astro';
+---
+
+<InteriorPageLayout
+  title="About"
+  description="Dipanjan Mondal is a software engineer writing about how software works and the tools he is building."
+  eyebrow="Dipanjan Mondal"
+  lede="I’m a software engineer. I explain how software works and share the tools I’m building to make it better."
+  contentFirst
+  rail={{
+    title: 'At a glance',
+    items: [
+      { label: 'Work', value: 'Software engineering' },
+      { label: 'Interests', value: 'Software internals and tools for developers' },
+      { label: 'Current project', value: 'Quill, a verifier prototype' },
+    ],
+  }}
+>
+  <div class="about-sections">
+    <section aria-labelledby="about-subjects">
+      <SectionHeading id="about-subjects" eyebrow="Writing" title="How software works" />
+      <div class="about-prose">
+        <p>
+          I like understanding what happens underneath the interfaces we use every day: how a
+          database stores an update, what survives a crash, or why concurrent operations can produce
+          an unexpected result.
+        </p>
+        <p>
+          Here I work through those questions with concrete examples, code, and interactive figures.
+          The aim is to make the reasoning visible, so you can follow the decisions and see what
+          each one changes.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="about-building">
+      <SectionHeading
+        id="about-building"
+        eyebrow="Building"
+        title="Tools to explore those questions"
+      />
+      <div class="about-prose">
+        <p>
+          I’m developing Quill, a verifier prototype, and exploring deterministic simulation
+          testing. I’m interested in how we can control the conditions a system runs under and
+          investigate failures that are hard to produce in ordinary testing.
+        </p>
+        <p>
+          I’ll share the work as it develops: what a prototype can demonstrate, the decisions behind
+          it, and the questions still open.
+        </p>
+      </div>
+    </section>
+
+    <section aria-labelledby="about-follow">
+      <SectionHeading id="about-follow" eyebrow="Elsewhere" title="Follow the work" />
+      <nav class="about-links" aria-label="Follow the work">
+        <a href="https://github.com/mdipanjan">
+          <span>Code and projects</span><strong>GitHub</strong>
+        </a>
+        <a href="https://x.com/devdjm">
+          <span>Short explanations and updates</span><strong>X · @devdjm</strong>
+        </a>
+        <a href="/archive/">
+          <span>Browse the writing</span><strong>Archive</strong>
+        </a>
+        <a href="/rss.xml">
+          <span>Get new articles in your reader</span><strong>RSS feed</strong>
+        </a>
+      </nav>
+    </section>
+  </div>
+</InteriorPageLayout>
+
+<style>
+  .about-sections {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .about-sections > section + section {
+    padding-top: var(--space-7);
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  .about-prose {
+    max-width: var(--width-prose);
+  }
+
+  .about-prose p {
+    margin: 0;
+    font-size: var(--font-size-body);
+    line-height: var(--line-height-reading);
+    text-wrap: pretty;
+  }
+
+  .about-prose p + p {
+    margin-top: var(--space-4);
+  }
+
+  .about-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-block: var(--border-thin) solid var(--color-rule);
+  }
+
+  .about-links a {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-5);
+    color: var(--color-text-muted);
+    text-decoration: none;
+  }
+
+  .about-links a:nth-child(even) {
+    border-left: var(--border-thin) solid var(--color-rule);
+  }
+
+  .about-links a:nth-child(n + 3) {
+    border-top: var(--border-thin) solid var(--color-rule);
+  }
+
+  .about-links a:hover {
+    background: var(--color-accent-soft);
+  }
+
+  .about-links span {
+    font-size: var(--font-size-small);
+  }
+
+  .about-links strong {
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    font-weight: var(--weight-medium);
+  }
+
+  @media (max-width: 520px) {
+    .about-links {
+      grid-template-columns: 1fr;
+    }
+
+    .about-links a + a {
+      border-top: var(--border-thin) solid var(--color-rule);
+      border-left: 0;
+    }
+  }
+</style>

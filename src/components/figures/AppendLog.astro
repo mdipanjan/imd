@@ -1,0 +1,455 @@
+---
+import { initialLog } from './append-log.mjs';
+---
+
+<figure class="append-demo" data-append-demo>
+  <div class="scene">
+    <div class="composition">
+      <div class="write-packet" data-write-packet hidden aria-hidden="true"></div>
+      <div class="file">
+        <div class="file-heading">accounts.log <span>append-only</span></div>
+        <div class="columns" aria-hidden="true">
+          <span>ID</span><span>name</span><span>balance</span>
+        </div>
+        <ol class="records" data-records aria-label="Records in write order">
+          {
+            initialLog().map((record) => (
+              <li>
+                <>
+                  <span>{record.id}</span>
+                  <span>{record.name}</span>
+                  <span>{record.balance}</span>
+                </>
+              </li>
+            ))
+          }
+        </ol>
+        <div class="end" data-end>end of file <span>append here</span></div>
+      </div>
+      <div class="read-result">
+        <span class="read-label">GET /accounts/101</span>
+        <div class="candidate">
+          <span data-result-label>latest balance</span><strong data-candidate>—</strong>
+        </div>
+        <p data-progress>Read the log to find it.</p>
+      </div>
+    </div>
+    <div class="controls" data-controls hidden>
+      <button type="button" data-play aria-pressed="false">Play</button>
+      <button type="button" data-next>Next →</button>
+    </div>
+    <p class="status" data-status role="status" aria-live="polite">
+      Three records. Maya’s starting balance is ₹5,000.
+    </p>
+  </div>
+  <figcaption>
+    Append a deposit, then read the log. The first matching record can be stale; the scan must reach
+    the end. Play follows the sequence; Next advances one operation.
+  </figcaption>
+  <noscript
+    ><p>
+      A deposit appends a fourth record for account 101 with balance 6000. Scanning all four records
+      finds this latest balance while preserving the original 5000 record.
+    </p></noscript
+  >
+</figure>
+
+<script>
+  import { reserveSpace, reserveRows } from './figure-space.mjs';
+  import { bindPlayback } from './figure-playback.mjs';
+  import { initialLog, appendDeposit, scanLog } from './append-log.mjs';
+
+  document.querySelectorAll<HTMLElement>('[data-append-demo]').forEach((figure) => {
+    if (figure.dataset.ready) return;
+    figure.dataset.ready = 'true';
+    const rows = figure.querySelector<HTMLOListElement>('[data-records]')!;
+    const candidate = figure.querySelector<HTMLElement>('[data-candidate]')!;
+    const label = figure.querySelector<HTMLElement>('[data-result-label]')!;
+    const progress = figure.querySelector<HTMLElement>('[data-progress]')!;
+    const status = figure.querySelector<HTMLElement>('[data-status]')!;
+    const end = figure.querySelector<HTMLElement>('[data-end]')!;
+    const packet = figure.querySelector<HTMLElement>('[data-write-packet]')!;
+    let packetMotion: Animation | undefined;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let records = initialLog();
+    function clearHighlights() {
+      rows.querySelectorAll('li').forEach((row) => row.classList.remove('scanning', 'matched'));
+      end.classList.remove('reached');
+    }
+    function renderRows() {
+      rows.replaceChildren(
+        ...records.map((record) => {
+          const row = document.createElement('li');
+          for (const value of [record.id, record.name, record.balance]) {
+            const cell = document.createElement('span');
+            cell.textContent = String(value);
+            row.append(cell);
+          }
+          return row;
+        }),
+      );
+    }
+    function restore() {
+      records = initialLog();
+      renderRows();
+      clearHighlights();
+      candidate.textContent = '—';
+      label.textContent = 'latest balance';
+      progress.textContent = 'Read the log to find it.';
+      status.textContent = 'Three records. Maya’s starting balance is ₹5,000.';
+    }
+    function append(done?: () => void) {
+      const pending = appendDeposit(records);
+      const container = figure.querySelector<HTMLElement>('.composition')!.getBoundingClientRect();
+      const destination = end.getBoundingClientRect();
+      packet.textContent = `101 · Maya · ${pending.at(-1)!.balance}`;
+      packet.hidden = false;
+      status.textContent =
+        'The new balance travels to the end of the log. Earlier records stay in place.';
+      packetMotion = packet.animate(
+        [
+          { transform: `translate(0px, 0px)`, opacity: 0 },
+          { transform: `translate(0px, 12px)`, opacity: 1, offset: 0.2 },
+          {
+            transform: `translate(${destination.left - container.left}px, ${destination.top - container.top}px)`,
+            opacity: 1,
+          },
+        ],
+        { duration: reduced.matches ? 0 : 850, fill: 'forwards', easing: 'ease-in-out' },
+      );
+      playback.later(
+        () => {
+          packetMotion?.cancel();
+          packet.hidden = true;
+          records = pending;
+          renderRows();
+          rows.lastElementChild?.classList.add('appended');
+          candidate.textContent = '—';
+          label.textContent = 'latest balance';
+          progress.textContent = 'New version appended. Read again.';
+          status.textContent = `Appended Maya’s ₹${records.at(-1)!.balance.toLocaleString('en-IN')} balance. All earlier records remain.`;
+          done?.();
+        },
+        reduced.matches ? 0 : 850,
+      );
+    }
+    function scan(done?: () => void) {
+      clearHighlights();
+      const steps = scanLog(records, 101);
+      let index = 0;
+      label.textContent = 'latest seen so far';
+      candidate.textContent = '—';
+      status.textContent = 'Scanning from the beginning. A match is provisional until the end.';
+      function next() {
+        clearHighlights();
+        const step = steps[index];
+        rows.children[index].classList.add(step.matched ? 'matched' : 'scanning');
+        candidate.textContent = step.balance === null ? '—' : String(step.balance);
+        progress.textContent = `Record ${index + 1} of ${steps.length}${step.matched ? ' · match' : ' · another account'}`;
+        index += 1;
+        playback.later(
+          () => {
+            if (index < steps.length) {
+              next();
+              return;
+            }
+            clearHighlights();
+            end.classList.add('reached');
+            label.textContent = 'latest balance';
+            progress.textContent = `End of file · ${steps.length} records read`;
+            status.textContent = `Read complete. Maya’s latest balance is ₹${steps.at(-1)!.balance!.toLocaleString('en-IN')}.`;
+            done?.();
+          },
+          reduced.matches ? 180 : 750,
+        );
+      }
+      next();
+    }
+    reserveRows(rows, 4);
+    reserveSpace(status, [
+      'Three records. Maya’s starting balance is ₹5,000.',
+      'The new balance travels to the end of the log. Earlier records stay in place.',
+      'Appended Maya’s ₹6,000 balance. All earlier records remain.',
+      'Scanning from the beginning. A match is provisional until the end.',
+      'Read complete. Maya’s latest balance is ₹6,000.',
+    ]);
+    reserveSpace(progress, [
+      'Read the log to find it.',
+      'New version appended. Read again.',
+      'Record 4 of 4 · another account',
+      'End of file · 4 records read',
+    ]);
+    const playback = bindPlayback(
+      figure,
+      [
+        () => new Promise<void>((resolve) => append(resolve)),
+        () => new Promise<void>((resolve) => scan(resolve)),
+      ],
+      restore,
+    );
+  });
+</script>
+
+<style>
+  .append-demo {
+    margin: var(--space-7) 0;
+  }
+  .scene {
+    --ink: #ede9df;
+    --muted: #a8b9b3;
+    --accent: #a9cbb9;
+    --rule: #4b6058;
+    color: var(--ink);
+    background: #202727;
+    padding: clamp(16px, 4vw, 32px);
+    font:
+      13px 'Helvetica Neue',
+      sans-serif;
+  }
+  .write-packet {
+    position: absolute;
+    z-index: 3;
+    top: 0;
+    left: 0;
+    padding: 10px;
+    border: 1px solid #89bba4;
+    background: #344a40;
+    color: #edf4ef;
+    font:
+      12px Menlo,
+      monospace;
+    pointer-events: none;
+  }
+  .write-packet[hidden] {
+    display: none;
+  }
+  .composition {
+    padding: 12px 10px 14px 0;
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(130px, 1fr);
+    gap: 32px;
+    align-items: center;
+  }
+  .file {
+    position: relative;
+    box-shadow: 5px 7px 0 #18231d;
+    border: 1px solid var(--rule);
+    border-radius: 1px;
+    background: #27322d;
+    padding: 18px;
+  }
+  .file::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    top: -7px;
+    height: 6px;
+    background: #35463e;
+    border: 1px solid var(--rule);
+    transform: skewX(-42deg);
+    transform-origin: bottom left;
+    pointer-events: none;
+  }
+  .file::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    bottom: -1px;
+    right: -7px;
+    width: 6px;
+    background: #1b2521;
+    border: 1px solid var(--rule);
+    transform: skewY(-48deg);
+    transform-origin: top left;
+    pointer-events: none;
+  }
+  .file-heading {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    padding-bottom: 16px;
+    font:
+      15px Menlo,
+      monospace;
+  }
+  .file-heading span {
+    color: var(--muted);
+    font:
+      11px 'Helvetica Neue',
+      sans-serif;
+  }
+  .columns,
+  .records :global(li) {
+    display: grid;
+    grid-template-columns: 38px minmax(65px, 1fr) 60px;
+    gap: 8px;
+    padding: 10px 6px;
+  }
+  .columns {
+    border-bottom: 1px solid var(--rule);
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .records {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .records :global(li) {
+    font:
+      12px Menlo,
+      monospace;
+    border-bottom: 1px solid #34423d;
+    transition: background 180ms;
+  }
+  .columns span:last-child,
+  .records :global(li span:last-child) {
+    text-align: right;
+  }
+  .records :global(.matched) {
+    background: #3a5044;
+    outline: 1px solid var(--accent);
+  }
+  .records :global(.scanning) {
+    background: #303b37;
+  }
+  .records :global(.appended) {
+    animation: append-record 500ms ease-out;
+  }
+  .end {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 6px 0;
+    color: var(--muted);
+    font:
+      11px Menlo,
+      monospace;
+  }
+  .end span {
+    color: var(--accent);
+  }
+  .end.reached {
+    color: var(--accent);
+  }
+  .read-label {
+    font:
+      12px Menlo,
+      monospace;
+    color: var(--muted);
+  }
+  .candidate {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .candidate span {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .candidate strong {
+    font:
+      32px Menlo,
+      monospace;
+    color: var(--accent);
+  }
+  .read-result p {
+    min-height: 3em;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .controls[hidden] {
+    display: none;
+  }
+  button {
+    min-height: 44px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: 9px 12px;
+    background: transparent;
+    color: var(--ink);
+    font:
+      12px Menlo,
+      monospace;
+    cursor: pointer;
+  }
+  button:first-child,
+  button[aria-pressed='true'] {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  button:hover:not(:disabled) {
+    background: #293332;
+  }
+  button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .status {
+    min-height: 3em;
+    margin: 18px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  figcaption {
+    margin-top: var(--space-3);
+    font-size: 0.85em;
+    line-height: 1.6;
+    color: var(--color-text-muted);
+  }
+  @keyframes append-record {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (max-width: 620px) {
+    .composition {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+    .read-result {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+    }
+    .candidate {
+      margin: 0;
+      grid-column: 2;
+      grid-row: 1 / 3;
+    }
+    .read-result p {
+      margin: 0;
+    }
+    .file {
+      padding: 12px;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .records :global(li) {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>

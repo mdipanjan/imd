@@ -8,37 +8,35 @@ import HomeLayout from '../layouts/HomeLayout.astro';
 import { toPostView } from '../lib/post-view';
 
 const POSTS_PER_PAGE = 8;
+const includeDrafts = import.meta.env.DEV;
 
 const posts = (await getCollection('posts'))
-  .filter((post) => !post.data.draft)
+  .filter((post) => !post.data.draft || includeDrafts)
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 const postViews = posts.map(toPostView);
 
 const currentFocus = [
-  { label: 'Exploring', value: 'Memory and evaluation for agents' },
-  { label: 'Building', value: 'Small tools that explain themselves' },
-  { label: 'Learning', value: 'Distributed systems from failure reports' },
+  { label: 'Writing', value: 'An LSM tree from first principles' },
+  { label: 'Building', value: 'Quill: a verifier prototype' },
+  { label: 'Exploring', value: 'Deterministic simulation testing' },
 ];
 ---
 
-<HomeLayout description="A personal technical journal about software, systems, and changed ideas.">
+<HomeLayout description="How software works, and the tools I’m building to make it better.">
   <HomeIntroduction />
   <div class="journal-body">
-    <CurrentFocus items={currentFocus} />
     <div class="journal-feed">
-      <FeaturedPost
-        post={postViews[0]}
-        belief={{
-          before: 'More structure makes publishing easier.',
-          after: 'The smallest durable workflow wins.',
-        }}
-      />
+      <FeaturedPost post={postViews[0]} />
       {
         postViews.length > 1 && (
-          <PostIndex posts={postViews.slice(1, POSTS_PER_PAGE)} total={postViews.length} />
+          <PostIndex
+            posts={postViews.slice(1, POSTS_PER_PAGE)}
+            total={postViews.filter((post) => !post.draft).length}
+          />
         )
       }
     </div>
+    <CurrentFocus items={currentFocus} />
   </div>
 </HomeLayout>
 
@@ -48,11 +46,17 @@ const currentFocus = [
     grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
   }
 
+  .journal-body > :global(.page-rail) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .journal-feed {
+    grid-column: 2;
+    grid-row: 1;
     min-width: 0;
     padding: var(--space-7) 0 var(--space-8) clamp(var(--space-6), 4vw, var(--space-8));
-    padding-right: var(--home-edge-inset);
-    border-left: var(--border-thin) solid var(--color-rule);
+    padding-right: var(--journal-edge-inset);
   }
 
   @media (max-width: 900px) {
@@ -60,9 +64,15 @@ const currentFocus = [
       grid-template-columns: 1fr;
     }
 
+    .journal-body > :global(.page-rail) {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
     .journal-feed {
-      padding-inline: var(--home-edge-inset);
-      border-left: 0;
+      grid-column: 1;
+      grid-row: 1;
+      padding-inline: var(--journal-edge-inset);
     }
   }
 </style>

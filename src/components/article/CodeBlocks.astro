@@ -2,30 +2,31 @@
   .article-prose .code-frame {
     overflow: hidden;
     margin-block: var(--space-6);
-    border: var(--border-thin) solid var(--color-rule-strong);
-    background: var(--color-code-surface);
+    border: var(--border-thin) solid var(--color-rule);
+    background: color-mix(in srgb, var(--color-code-surface) 45%, var(--color-surface));
+    border-radius: 3px;
   }
 
   .article-prose .code-frame__toolbar {
     display: flex;
-    min-height: 2.4rem;
+    min-height: 2.5rem;
     padding-inline: var(--space-4);
     align-items: center;
     justify-content: space-between;
-    border-bottom: var(--border-thin) solid var(--color-rule);
     color: var(--color-text-faint);
     font-family: var(--font-interface);
     font-size: var(--font-size-label);
-    text-transform: uppercase;
   }
 
   .article-prose .code-frame__copy {
+    min-height: 44px;
+    min-width: 44px;
     padding: 0.25rem 0;
+    text-align: right;
     border: 0;
     background: transparent;
     color: var(--color-accent);
     font: inherit;
-    text-transform: uppercase;
     cursor: pointer;
   }
 
@@ -34,7 +35,27 @@
     color: var(--color-accent-hover);
   }
 
+  .article-prose .code-frame__copy:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+
+  .article-prose .code-frame .example-number {
+    color: var(--color-accent);
+  }
+  .article-prose .code-frame .example-string {
+    color: var(--color-text-muted);
+  }
+
+  .article-prose .code-frame pre code {
+    font-size: inherit;
+  }
+
   .article-prose .code-frame pre {
+    padding: 4px var(--space-4) var(--space-4);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    tab-size: 4;
     max-width: 100%;
     margin: 0;
     border: 0;
@@ -47,7 +68,8 @@
   const languageNames: Record<string, string> = {
     js: 'JavaScript',
     ts: 'TypeScript',
-    txt: 'Text',
+    txt: 'Example',
+    text: 'Example',
   };
 
   const copyCode = async (text: string) => {
@@ -58,6 +80,25 @@
     if (pre.parentElement?.classList.contains('code-frame')) return;
 
     const language = pre.dataset.language ?? 'text';
+    // Keep pseudocode as text; distinguish literal values without assigning a language.
+    if (language === 'text' || language === 'txt') {
+      pre.querySelectorAll('.line').forEach((line) => {
+        const text = line.textContent ?? '';
+        const fragments: Node[] = [];
+        let cursor = 0;
+        for (const match of text.matchAll(/"[^"\n]*"|\b\d+(?:\.\d+)?\b/g)) {
+          const start = match.index!;
+          fragments.push(document.createTextNode(text.slice(cursor, start)));
+          const token = document.createElement('span');
+          token.className = match[0].startsWith('"') ? 'example-string' : 'example-number';
+          token.textContent = match[0];
+          fragments.push(token);
+          cursor = start + match[0].length;
+        }
+        fragments.push(document.createTextNode(text.slice(cursor)));
+        line.replaceChildren(...fragments);
+      });
+    }
     const frame = document.createElement('div');
     const toolbar = document.createElement('div');
     const label = document.createElement('span');

@@ -1,6 +1,7 @@
 ---
 import { formatShortDate } from '../../lib/format';
 import type { PostView } from '../../lib/post-view';
+import SectionHeading from '../journal/SectionHeading.astro';
 
 type Props = {
   posts: PostView[];
@@ -11,11 +12,12 @@ const { posts, total } = Astro.props;
 ---
 
 <section class="journal-index" aria-labelledby="recent-posts">
-  <header>
-    <p>More writing</p>
-    <h2 id="recent-posts">Recent notes</h2>
-    <span>{String(total).padStart(2, '0')} published</span>
-  </header>
+  <SectionHeading
+    id="recent-posts"
+    eyebrow="More writing"
+    title="Recent notes"
+    meta={`${String(total).padStart(2, '0')} published`}
+  />
   {
     posts.length > 0 ? (
       <div class="journal-index__list">
@@ -36,32 +38,6 @@ const { posts, total } = Astro.props;
 <style>
   .journal-index {
     margin-top: var(--space-8);
-  }
-
-  header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: baseline;
-  }
-
-  header p,
-  header span {
-    color: var(--color-text-faint);
-    font-family: var(--font-interface);
-    font-size: var(--font-size-label);
-    text-transform: uppercase;
-  }
-
-  header p {
-    grid-column: 1 / -1;
-    margin: 0 0 var(--space-2);
-    color: var(--color-accent);
-  }
-
-  h2 {
-    margin: 0 0 var(--space-4);
-    font-size: 1.7rem;
-    font-weight: var(--weight-regular);
   }
 
   .journal-index__list a {

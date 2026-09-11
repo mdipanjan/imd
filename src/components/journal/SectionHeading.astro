@@ -1,0 +1,59 @@
+---
+type Props = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  meta?: string;
+};
+
+const { id, eyebrow, title, meta } = Astro.props;
+---
+
+<header class="section-heading" aria-labelledby={id}>
+  <p>{eyebrow}</p>
+  <div>
+    <h2 id={id}>{title}</h2>
+    {meta && <span>{meta}</span>}
+  </div>
+</header>
+
+<style>
+  .section-heading {
+    margin-bottom: var(--space-5);
+  }
+
+  .section-heading > p,
+  .section-heading span {
+    margin: 0;
+    color: var(--color-text-faint);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+  }
+
+  .section-heading > p {
+    margin-bottom: var(--space-2);
+    color: var(--color-accent);
+    letter-spacing: 0.06em;
+  }
+
+  .section-heading > div {
+    display: flex;
+    gap: var(--space-5);
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: var(--font-size-heading-2);
+    font-weight: var(--weight-regular);
+    letter-spacing: -0.035em;
+  }
+
+  @media (max-width: 520px) {
+    .section-heading > div {
+      display: grid;
+      gap: var(--space-1);
+    }
+  }
+</style>

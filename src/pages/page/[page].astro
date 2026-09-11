@@ -1,8 +1,9 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostList from '../../components/PostList.astro';
 import Pagination from '../../components/Pagination.astro';
+import InteriorPageLayout from '../../layouts/InteriorPageLayout.astro';
+import { toPostView } from '../../lib/post-view';
 
 type PageProps = {
   page: {
@@ -39,10 +40,23 @@ export async function getStaticPaths() {
 }
 
 const { page } = Astro.props as PageProps;
+const postViews = page.data.map(toPostView);
 ---
 
-<BaseLayout title={`Posts, page ${page.currentPage}`} description="Older posts.">
-  <h1>Posts</h1>
-  <PostList posts={page.data} />
+<InteriorPageLayout
+  title="Earlier notes"
+  description={`Earlier field notes, page ${page.currentPage}.`}
+  eyebrow="Journal index"
+  lede="Older entries from the same working record, kept in reverse chronological order."
+  rail={{
+    title: 'This page',
+    items: [
+      { label: 'Page', value: `${page.currentPage} of ${page.lastPage}` },
+      { label: 'Showing', value: `${postViews.length} notes` },
+      { label: 'Order', value: 'Newest first' },
+    ],
+  }}
+>
+  <PostList posts={postViews} />
   <Pagination currentPage={page.currentPage} lastPage={page.lastPage} />
-</BaseLayout>
+</InteriorPageLayout>

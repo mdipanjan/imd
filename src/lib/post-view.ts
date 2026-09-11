@@ -12,6 +12,7 @@ export type PostView = {
   description: string;
   date: Date;
   updated?: Date;
+  draft: boolean;
   tags: string[];
   annotations: PostAnnotation[];
 };
@@ -24,6 +25,7 @@ export const toPostView = (post: CollectionEntry<'posts'>): PostView => ({
   description: post.data.description,
   date: post.data.date,
   updated: post.data.updated,
+  draft: post.data.draft,
   tags: post.data.tags,
   annotations: post.data.annotations,
 });

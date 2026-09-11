@@ -28,8 +28,8 @@ test('article metadata is rendered by a reusable semantic component', async () =
   const header = await readSource('src/components/article/ArticleHeader.astro');
   const metadata = await readSource('src/components/MetadataList.astro');
 
-  assert.match(header, /<MetadataList items=\{metadataItems\} \/>/);
-  assert.match(metadata, /<dl class="metadata-list">/);
+  assert.match(header, /<MetadataList items=\{metadataItems\} compact \/>/);
+  assert.match(metadata, /<dl class="metadata-list"/);
   assert.match(metadata, /datetime/);
 });
 

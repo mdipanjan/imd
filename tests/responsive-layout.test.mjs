@@ -38,8 +38,8 @@ test('tablets replace the fixed index rail with an in-flow contents disclosure',
 
 test('the home composition changes before its featured columns become narrow', async () => {
   const home = await readSource('src/pages/index.astro');
-  const introduction = await readSource('src/components/home/HomeIntroduction.astro');
-  const focus = await readSource('src/components/home/CurrentFocus.astro');
+  const introduction = await readSource('src/components/journal/PageIntroduction.astro');
+  const focus = await readSource('src/components/journal/PageRail.astro');
   const featured = await readSource('src/components/home/FeaturedPost.astro');
 
   for (const source of [home, introduction, focus, featured]) {
