@@ -28,6 +28,8 @@ const hasAnnotations = annotations.length > 0;
 <BaseLayout
   title={post.title}
   description={post.description}
+  image={post.cover?.src}
+  imageAlt={post.cover?.alt}
   type="article"
   publishedTime={post.draft ? undefined : post.date}
   modifiedTime={post.updated}
@@ -45,6 +47,18 @@ const hasAnnotations = annotations.length > 0;
         draft={post.draft}
         tags={post.tags}
       />
+      {
+        post.cover && (
+          <img
+            class="article-cover"
+            src={post.cover.src}
+            alt={post.cover.alt}
+            width={post.cover.width}
+            height={post.cover.height}
+            fetchpriority="high"
+          />
+        )
+      }
       <ArticleIndexRail headings={headings} variant="disclosure" />
       <div class="article-prose">
         <slot />
@@ -84,6 +98,15 @@ const hasAnnotations = annotations.length > 0;
   .article-reading {
     min-width: 0;
     padding: var(--space-7) clamp(var(--space-6), 5vw, var(--space-8)) var(--space-8);
+  }
+
+  .article-cover {
+    display: block;
+    width: 100%;
+    max-width: var(--width-prose);
+    height: auto;
+    margin-block: var(--space-6);
+    margin-inline: auto;
   }
 
   :global(.article-prose) {

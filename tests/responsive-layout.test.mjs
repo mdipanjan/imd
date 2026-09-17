@@ -39,12 +39,24 @@ test('tablets replace the fixed index rail with an in-flow contents disclosure',
 test('the home composition changes before its featured columns become narrow', async () => {
   const home = await readSource('src/pages/index.astro');
   const introduction = await readSource('src/components/journal/PageIntroduction.astro');
-  const focus = await readSource('src/components/journal/PageRail.astro');
   const featured = await readSource('src/components/home/FeaturedPost.astro');
 
-  for (const source of [home, introduction, focus, featured]) {
+  for (const source of [home, introduction, featured]) {
     assert.match(source, /@media \(max-width: 900px\)/);
   }
+});
+
+test('the home work note moves below the introduction on smaller laptops', async () => {
+  const introduction = await readSource('src/components/journal/PageIntroduction.astro');
+
+  assert.match(
+    introduction,
+    /@media \(max-width: 1180px\)[\s\S]*\.page-introduction__aside\s*\{[^}]*grid-column:\s*2/,
+  );
+  assert.match(
+    introduction,
+    /@media \(max-width: 900px\)[\s\S]*\.page-introduction__aside\s*\{[^}]*grid-column:\s*1/,
+  );
 });
 
 test('compact navigation keeps every primary destination available', async () => {

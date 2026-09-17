@@ -8,6 +8,8 @@ import '../styles/global.css';
 type Props = {
   title?: string;
   description?: string;
+  image?: string;
+  imageAlt?: string;
   type?: 'website' | 'article';
   publishedTime?: Date;
   modifiedTime?: Date;
@@ -18,6 +20,8 @@ type Props = {
 const {
   title,
   description = site.description,
+  image,
+  imageAlt,
   type = 'website',
   publishedTime,
   modifiedTime,
@@ -36,6 +40,8 @@ const {
     <Seo
       title={title}
       description={description}
+      image={image}
+      imageAlt={imageAlt}
       type={type}
       publishedTime={publishedTime}
       modifiedTime={modifiedTime}

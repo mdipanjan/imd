@@ -1,5 +1,5 @@
 <figure class="memory-account" data-memory-account>
-  <div class="scene">
+  <div class="scene technical-figure-scene">
     <div class="request-lane" data-request-lane>
       <span>deposit request</span><span>account 101</span>
     </div>
@@ -34,7 +34,6 @@
     </div>
     <div class="controls" hidden data-controls>
       <button type="button" data-play aria-pressed="false">Play</button>
-      <button type="button" data-next>Next →</button>
     </div>
     <p class="outcome" role="status" aria-live="polite" data-outcome>
       Account 101 has a balance of ₹5,000.
@@ -42,7 +41,7 @@
   </div>
   <figcaption>
     Make a deposit, then restart the process. The map holds the balance only while the process is
-    running. Play follows the sequence; Next advances one operation.
+    running. Play follows the sequence; Pause holds the current moment.
   </figcaption>
   <noscript
     ><p>
@@ -55,6 +54,7 @@
 <script>
   import { reserveSpace } from './figure-space.mjs';
   import { bindPlayback } from './figure-playback.mjs';
+  import { createMotionPlayer } from './figure-motion.mjs';
   import { initialBalance, updateAccount } from './memory-account.mjs';
   document.querySelectorAll<HTMLElement>('[data-memory-account]').forEach((figure) => {
     if (figure.dataset.ready) return;
@@ -67,28 +67,8 @@
     const packet = figure.querySelector<HTMLElement>('[data-packet]')!;
     const lane = figure.querySelector<HTMLElement>('[data-request-lane]')!;
     const scene = figure.querySelector<HTMLElement>('.scene')!;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const animate = createMotionPlayer(matchMedia('(prefers-reduced-motion: reduce)'));
     let balance: number | null = initialBalance;
-    async function animate(
-      element: HTMLElement,
-      frames: Keyframe[],
-      duration: number,
-      motion = true,
-    ) {
-      const animation = element.animate(frames, {
-        duration: motion && reduced.matches ? 0 : duration,
-        easing: 'cubic-bezier(.4,0,.2,1)',
-        fill: 'forwards',
-      });
-      try {
-        await animation.finished;
-        return true;
-      } catch {
-        return false;
-      } finally {
-        animation.cancel();
-      }
-    }
     function restore() {
       balance = initialBalance;
       value.textContent = String(balance);
@@ -214,18 +194,7 @@
     margin: var(--space-7) 0;
   }
   .scene {
-    --memory-bg: #202727;
-    --memory-surface: #293332;
-    --memory-ink: #ede9df;
-    --memory-muted: #a8b9b3;
-    --memory-accent: #a9cbb9;
-    --memory-rule: #4b6058;
-    padding: clamp(16px, 4vw, 32px);
-    background: var(--memory-bg);
-    color: var(--memory-ink);
-    font:
-      14px 'Helvetica Neue',
-      sans-serif;
+    font-size: 14px;
   }
   .ram-label {
     display: flex;

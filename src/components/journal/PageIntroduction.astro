@@ -5,19 +5,34 @@ type Props = {
   lede: string;
   scale?: 'display' | 'page';
   measure?: 'compact' | 'wide';
+  layout?: 'split' | 'prose';
 };
 
-const { eyebrow, title, lede, scale = 'page', measure = 'wide' } = Astro.props;
+const { eyebrow, title, lede, scale = 'page', measure = 'wide', layout = 'split' } = Astro.props;
+const hasAside = Astro.slots.has('aside');
 ---
 
 <header
-  class:list={['page-introduction', `page-introduction--${scale}`, `page-introduction--${measure}`]}
+  class:list={[
+    'page-introduction',
+    `page-introduction--${scale}`,
+    `page-introduction--${measure}`,
+    `page-introduction--${layout}`,
+    { 'page-introduction--with-aside': hasAside },
+  ]}
 >
   <p class="page-introduction__eyebrow">{eyebrow}</p>
-  <div>
+  <div class="page-introduction__main">
     <h1>{title}</h1>
     <p class="page-introduction__lede">{lede}</p>
   </div>
+  {
+    hasAside && (
+      <aside class="page-introduction__aside">
+        <slot name="aside" />
+      </aside>
+    )
+  }
 </header>
 
 <style>
@@ -39,6 +54,15 @@ const { eyebrow, title, lede, scale = 'page', measure = 'wide' } = Astro.props;
 
   .page-introduction > div {
     padding-right: var(--journal-edge-inset);
+  }
+
+  .page-introduction--with-aside {
+    grid-template-columns: var(--width-index-rail) minmax(0, 1fr) minmax(14rem, 18rem);
+  }
+
+  .page-introduction__aside {
+    align-self: center;
+    padding-inline: var(--space-4) var(--journal-edge-inset);
   }
 
   h1 {
@@ -75,6 +99,40 @@ const { eyebrow, title, lede, scale = 'page', measure = 'wide' } = Astro.props;
     font-size: var(--font-size-body);
   }
 
+  .page-introduction--prose {
+    display: block;
+    width: min(var(--width-prose), calc(100% - 2 * var(--journal-edge-inset)));
+    margin-inline: auto;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .page-introduction--prose .page-introduction__eyebrow {
+    margin: 0 0 var(--space-5);
+    padding: 0;
+  }
+
+  .page-introduction--prose > div {
+    padding: 0;
+  }
+
+  .page-introduction--prose .page-introduction__lede {
+    margin-top: var(--space-3);
+  }
+
+  @media (max-width: 1180px) {
+    .page-introduction--with-aside {
+      grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
+    }
+
+    .page-introduction__aside {
+      grid-column: 2;
+      max-width: 31rem;
+      margin-top: var(--space-6);
+      padding-inline: 0 var(--journal-edge-inset);
+    }
+  }
+
   @media (max-width: 900px) {
     .page-introduction {
       grid-template-columns: 1fr;
@@ -82,6 +140,12 @@ const { eyebrow, title, lede, scale = 'page', measure = 'wide' } = Astro.props;
     }
 
     .page-introduction > div {
+      padding-inline: var(--journal-edge-inset);
+    }
+
+    .page-introduction__aside {
+      grid-column: 1;
+      margin-top: 0;
       padding-inline: var(--journal-edge-inset);
     }
   }

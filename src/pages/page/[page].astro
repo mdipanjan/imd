@@ -4,6 +4,7 @@ import PostList from '../../components/PostList.astro';
 import Pagination from '../../components/Pagination.astro';
 import InteriorPageLayout from '../../layouts/InteriorPageLayout.astro';
 import { toPostView } from '../../lib/post-view';
+import { POSTS_PER_PAGE, selectPosts } from '../../lib/posts.mjs';
 
 type PageProps = {
   page: {
@@ -14,23 +15,20 @@ type PageProps = {
 };
 
 export async function getStaticPaths() {
-  const postsPerPage = 8;
-  const posts = (await getCollection('posts'))
-    .filter((post) => !post.data.draft)
-    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+  const posts = selectPosts(await getCollection('posts'));
 
-  const lastPage = Math.ceil(posts.length / postsPerPage);
+  const lastPage = Math.ceil(posts.length / POSTS_PER_PAGE);
   const paths = [];
 
   for (let currentPage = 2; currentPage <= lastPage; currentPage += 1) {
-    const start = (currentPage - 1) * postsPerPage;
+    const start = (currentPage - 1) * POSTS_PER_PAGE;
     paths.push({
       params: { page: String(currentPage) },
       props: {
         page: {
           currentPage,
           lastPage,
-          data: posts.slice(start, start + postsPerPage),
+          data: posts.slice(start, start + POSTS_PER_PAGE),
         },
       },
     });

@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "astro dev",
     "typecheck": "astro check",
+    "test": "node --test tests/*.test.mjs",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm typecheck && pnpm lint && pnpm format:check",
+    "check": "pnpm typecheck && pnpm test && pnpm lint && pnpm format:check",
     "build": "pnpm check && astro build",
     "preview": "astro preview"
   },

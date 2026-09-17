@@ -1,28 +1,32 @@
 ---
-title: 'Building an LSM Tree from First Principles'
+title: 'How to Build an LSM Tree'
 description: 'Follow one account from an in-memory map to logs, sorted tables, compaction, and crash recovery.'
 date: 2026-09-09
-updated: 2026-09-11
+updated: 2026-09-13
 tags: [storage engines, lsm trees]
-draft: true
+draft: false
 toc: true
+cover:
+  src: /images/posts/lsm-article-cover.png
+  alt: 'LSM: One Decision at a Time. An append-only log becomes a sorted table, keeping the latest update for each key.'
+  width: 1774
+  height: 887
 ---
 
 import OffsetIndex from '../../components/figures/OffsetIndex.astro';
-
 import AppendLog from '../../components/figures/AppendLog.astro';
-
 import MemoryAccount from '../../components/figures/MemoryAccount.astro';
-
 import StorageStory from '../../components/figures/StorageStory.astro';
 
-Most of us use a database long before we think about how it stores anything. We write an `INSERT`, get a success response, and move on. But somebody has to decide where those bytes go, how an update changes them, and what survives when the process stops.
+As engineers, we've all used different databases; we call APIs, store data, and it feels magical. I used to feel the same way and wanted to see how the storage engine actually works.
 
-Let’s work through those decisions by building the storage for a small payments service. We’ll start with one account and follow what happens as we add records, change balances, and restart the application.
+Oh boy! I didn’t expect to go down the rabbit hole, and it’s hella exciting.
+
+Imagine we’re building a payment service and hand-rolling the storage engine ourselves.
 
 ## Just Put It in Memory
 
-Our first account belongs to Maya Sen. It has an ID of `101` and a balance of ₹5,000. Since requests identify accounts by ID, we can use that ID as the key in a map and keep the name and balance as its value:
+Assume we have a user, Maya, and we want to save her account balance. It has an ID of <span style={{ color: '#b3413f' }}>`101`</span> and a balance of 5,000. The easiest solution we can think of is to simply put everything in memory.
 
 ```text
 accounts = {
@@ -30,23 +34,21 @@ accounts = {
 }
 ```
 
+To read the account, we look up key `101`. With a hash map, create, read, update, and delete take constant time on average.
+
 <MemoryAccount />
 
-To read the account, we look up key `101`. A ₹1,000 deposit replaces the balance with `6000`. The map holds the latest value, so we can answer the next request directly from memory.
-
-Then we deploy a new version. The process stops, its memory is released, and the new process starts with an empty map. Account `101` is gone. We may have confirmed a balance update seconds earlier, but we now have no record of it.
-
-A routine deployment is enough to erase every account.
-
-The map is still useful for looking things up, but it cannot hold our only copy of the data. Every change we confirm needs to survive a restart. We’ll start by writing records to a file on disk. When Maya’s balance changes, we’ll also need to decide what happens to the old record.
+You may be wondering, what if the server goes down? If the server crashes or we redeploy, Maya’s account is gone. So we need a way to persist the data even when the server crashes, some kind of a durable solution!
 
 ## Append Every Change
 
-Creating Maya’s account means writing her ID, name, and ₹5,000 balance as a line in `accounts.log`. A ₹1,000 deposit then seems to require a small edit: find that line and replace `5000` with `6000`.
+As a durable storage solution, we have the next best thing: disk storage. In disk storage, we can have a log file, something like `accounts.log` maybe, and simply put the entries in it. We have found ourselves a solution!! For the sake of simplicity, we are assuming we are storing the data as it is, but actually the data are stored as encoded values.
 
-That happens to fit. Both balances occupy four characters in this text format. A later balance of ₹10,000 would need five, and the next record might begin immediately after this one. A fixed-width encoding could avoid that particular problem, but we would still have to locate the old record and handle a write that stops halfway through changing it.
+Now you may be thinking, how do we update an existing value? We have to locate the value in `accounts.log`, then have to edit it.
 
-For this version, we can leave the old record alone and append the updated account to the end. Creating an account and changing an existing one now use the same write path:
+But wait, if the updated record takes more bytes than the old one, it may no longer fit in the same space.
+
+So the simplest solution is we just leave the old record as it is and append the updated account to the end, and this is what we call an **append-only log**. Creating an account and changing an existing one now use the same write path:
 
 ```text
 accounts.log
@@ -57,25 +59,27 @@ accounts.log
 101, Maya Sen, 6000
 ```
 
+Okay, we’ve saved the records. But when Maya checks her balance, how do we find the latest one? We could read the whole log when the server starts and build our map again.
+
+Every time we see another entry for Maya, we replace her previous balance. After that, lookups are fast again. That works, but we’re still keeping every account in memory. What if we leave the records on disk and read them when needed?
+
 <AppendLog />
 
-The file contains two versions of account `101`. We treat the last complete record for an ID as its current value, so Maya’s balance is ₹6,000. The earlier ₹5,000 record still occupies space; it has simply been superseded. This is an **append-only log**, with records arranged in the order we wrote them.
+Now the duplicate entries become annoying. The first 101 we find says `5000`, but there’s a newer one further down. We have to keep reading until the end to know we’ve found the latest balance. And if the account doesn’t exist, we’ve read the whole file for nothing.
 
-Writing to a file still needs some care. The operating system can buffer writes in memory, so a successful `write()` alone does not mean the data would survive a power failure. Before confirming a durable write, we need the required sync operation, such as [`fsync`](https://man7.org/linux/man-pages/man2/fsync.2.html), to succeed. Recovery also needs a way to detect an incomplete final record. Appending gives us a simpler file layout; crash recovery still has work to do.
-
-After a restart, we could read the log from beginning to end and rebuild our map, replacing each account’s value whenever we encounter a newer version. That restores fast lookups while all the current account data fits in memory.
-
-If we want to retrieve values from the file instead, the duplicate records become a problem for reads. Finding the first `101` gives us an outdated balance. A scan from the beginning has to continue to the end to establish which version is newest, and an account that does not exist makes us scan the whole file anyway. Every deposit adds more data for later reads to examine.
-
-We only wanted Maya’s current balance. If we remembered where her newest record began, we could jump straight to it.
+Could we just remember where Maya’s latest record is?
 
 ## Remember Where the Record Lives
 
-Every time we append a record, we already know where we wrote it. We can keep that position in a map keyed by account ID and look it up when a read arrives. That map is our **index**.
+The append-only log gives us a very crucial piece of information for free: the position of the new record, which is called the **byte offset**. What do we do with this byte offset?  We store that position against the account ID in a map in memory, and a lookup can jump directly to it. This map is our **index**.
 
-A **byte offset** counts bytes from the start of a file, beginning at `0`. With UTF-8 encoding and a single newline after each record, the four record lines above occupy 20 bytes each. They start at offsets `0`, `20`, `40`, and `60`. Keeping the latest position for each account gives us:
+A **byte offset** counts bytes from the start of a file, beginning at 0. With UTF-8 encoding and a single newline after each record, the four record lines above occupy 20 bytes each. They start at offsets `0`, `20`, `40`, and `60`. Keeping the latest position for each account gives us:
 
 ```text
+beginning of file                         latest 101
+       │                                      │
+       0 ─────────────────────────────────── 60
+
 latest_offset = {
     101 → 60
     205 → 20
@@ -83,148 +87,121 @@ latest_offset = {
 }
 ```
 
-A request for account `101` now finds offset `60` in the index. We jump to that position in `accounts.log` and read the record through its terminating newline, returning Maya’s ₹6,000 balance. Once the index covers the whole log, a missing ID also gives us an answer immediately: there is no account to retrieve.
+A request for account 101 now finds offset `60` in the index. We jump to that position in accounts.log and read the record, and return Maya’s `6,000` balance. Think of this as having an address for each record.
 
-Maya then deposits another ₹500. We append her updated account with a balance of ₹6,500 at offset `80`, make the write durable, and change the index entry from `60` to `80` before confirming the update. The next read follows the new position. We never need to search for either of her older records.
+While we are looking up, a missing ID also gives us an answer immediately: there is no account to retrieve. Maya then deposits another `500`. We append her updated account with a balance of `6,500` at offset `80`, make the write durable, and change the index entry from `60` to `80` before confirming the update.
+
+What does this give us? We never need to search for either of her older records.
 
 <OffsetIndex />
 
-The full account records stay in the file. RAM holds their IDs and offsets, which can save memory when the records are large. The index still needs one entry per account, though, so the number of distinct accounts still matters.
+The full account records stay in the file. RAM holds their IDs and offsets, which can save memory when the records are large.
 
-On restart, the index disappears with the rest of the process’s memory. We rebuild it by scanning the log from beginning to end and recording each complete, valid record’s starting offset. Whenever an ID appears again, its newer offset replaces the previous one. For Maya, the entry moves through `0`, `60`, and `80`, finishing at the record with her current balance.
+On restart, the index disappears with the rest of the process’s memory. We can just rebuild it by scanning the log end to end and recording each complete, valid record’s starting offset.
 
-This moves the full scan from every lookup to startup. As the log grows, that startup scan becomes more expensive.
-
-After a thousand more updates to Maya’s balance, the index still has one entry for her. The file has a thousand more records. Reads can skip the old versions now, but they still consume disk space and take time to scan during recovery. We need a way to reclaim that space while the service continues accepting writes.
+Whenever an ID appears again, its newer offset replaces the previous one. For Maya, the entry moves through `0`, `60`, and `80`, finishing at the record with her current balance. This moves the full scan from every lookup to startup. As the log grows, that startup scan becomes more expensive.
 
 ## Split the Log into Segments
 
-The index tells us which records have been superseded. Removing them is harder. If we rewrite the file the service is still appending to, we have to coordinate incoming writes, records being moved, and reads that already hold offsets into that file.
+Everything is working, but the log keeps growing with every update. After millions of updates, we’re keeping old balances nobody needs, and scanning all of them during startup. How do we clean those up while new writes are still coming in?
 
-We can give the cleanup a stable set of files to work on. Put a size limit on the active log, and when it reaches that limit, direct new writes into a fresh file. The old file becomes immutable: we can read it, but we stop adding or changing records inside it. These individual log files are our **segments**.
+We set a size limit on the active log. When it reaches the limit, we simply direct the new writes to a fresh new log file and leave the old one immutable. These files are called **segments**.
 
-The index now needs a file name as well as a byte offset. If we rotate after the first four records in our example, Maya’s ₹6,500 update becomes the first record in `segment-02.log`. Her index entry changes to `101 → (segment-02.log, 0)`. A read still goes straight to the latest record; it simply needs to know which file to open.
+Now we have multiple files, aka **segments**, so the offset alone won’t help. Offset 0 in which file? Our index needs to remember the file name too.
 
-Once `segment-02.log` has also filled up and closed, writes move to `segment-03.log`. We can now merge the closed files, copying records whose locations still match the index. With Maya’s latest balance at ₹6,500, that keeps her newest record and skips the ₹5,000 and ₹6,000 versions. Combining files is **merging**; removing obsolete versions is **compaction**. Here we do both together.
+Let's say we close the first segment after those four records. Now  Maya’s next update for `6,500` goes at the beginning of `segment-02.log`. The index entry becomes `101` → `(segment-02.log, 0)`. So we know which file to open and where to read.
 
-New deposits continue into the active segment while this runs. Suppose Maya receives another ₹500 during compaction. Her current balance is now ₹7,000, and the index points into the active file. Installing the copied ₹6,500 record must not replace that entry. We relocate an index entry only if it still points to the record we copied, with the check and change performed atomically.
+When that file reaches its limit, new writes are now added to `segment-03.log`. The two closed files aren’t changing anymore, so we can now clean them up without new writes being added halfway through.
 
 <StorageStory story="segments" />
 
-The replacement is written as a separate file. The inputs remain available until that file is durable, the index entries have been safely relocated, and reads using the old locations have finished. We also need to commit the change in the set of live files atomically and durably before deleting any inputs, so recovery can distinguish a completed replacement from an abandoned partial file. File-set bookkeeping of this kind is the job of the [manifest in LevelDB](https://github.com/google/leveldb/blob/main/doc/impl.md#manifest).
+We combine the closed files into a new file, keeping the latest version of each account from those files. Combining files is **merging**; removing obsolete versions is **compaction**.
 
-Copying a record must preserve its place in the write history, too. A replacement file created today may contain yesterday’s balances. Its creation time cannot make those balances newer than deposits already written to the active segment.
+Okay, we’ve copied the records we need. Can we delete the old files now? To do that, we need to ensure the new file is safely saved on disk, the index must point to the new locations, and any reads still using the old files must finish.
 
-Compaction reclaims space and reduces the history we scan during recovery, at the cost of reading and rewriting data in the background. It shares disk bandwidth with the application, so it needs enough capacity to keep up with incoming updates. Splitting the log makes that work manageable; rotation alone does not reclaim any space.
+For fetching one account by ID, we already have a useful design, similar to **Bitcask**. But what if we want all accounts from `100` through `300`? Our hash index doesn’t keep IDs in order, so we have to check keys and fetch records scattered across files.
 
-This arrangement is already a useful storage design, broadly similar to [Bitcask](https://riak.com/assets/bitcask-intro.pdf). Its hash index works well for looking up individual accounts, but it gives us no ordering between them. A request for accounts `100` through `300` still has us checking keys in the hash table and retrieving records scattered across files. Sorting the records within each completed segment would give us a more useful layout for those reads—and another way to merge files.
+What if we kept the records sorted by account ID?
 
 ## Sort the Records by Key
 
-In a file sorted by account ID, accounts `100` through `300` sit together. Once we find the start of that range, we can read forward and stop when the next ID exceeds `300`. The file’s order now tells us which records we can skip.
+Good job so far! We really have come a long way. We have now solved the ever growing list problem with segments, and compacting them when needed. But you may have noticed a problem if you’re following along carefully. We are still storing the records based on their arrival order. What if we want to make a range query? Looks like we’ve got ourselves into another fine pickle.
 
-We’ll use that layout for completed batches of writes. For the current-balance reads in our example, each batch needs only its last update for an account. We write those records in account-ID order into a new immutable file: a **Sorted String Table**, or **SSTable**. The name comes from treating keys and values as byte strings; our keys still represent account IDs. The [Bigtable paper](https://storage.googleapis.com/gweb-research2023-media/pubtools/4443.pdf) describes this combination of ordered records, individual lookups and range scans.
+But fear not, we’ve got it covered. Let us introduce a new rule that says:
 
-Sorting a batch does not remove older versions in other files. An earlier batch and a later one might produce these tables:
+> Inside every completed segment, store key-value pairs in sorted key order.
+
+And this sorted immutable segment is called a **Sorted String Table**, or **SSTable.** Point to remember: sorting a batch does not remove older versions in other files. An earlier batch and a later one might produce these tables:
 
 ```text
 Earlier writes                  Later writes
-101 → Maya Sen, 6500             101 → Maya Sen, 7000
+101 → Maya, 6500                 101 → Maya, 7000
 205 → Priya,    8000             150 → Ananya,   4000
 310 → Rahul,    2000             205 → Priya,    9000
 ```
 
-To merge them, we compare the next unread account in each file. Both start with `101`, so we write Maya’s later ₹7,000 record and advance both inputs. We now have `205` on the left and `150` on the right. Copy `150` and advance only the right input. The two `205` records meet next; keep Priya’s ₹9,000 update. Rahul’s `310` is the remaining record.
-
 <StorageStory story="sorted-merge" />
 
-The output is sorted, and every input moves forward. We need buffers for the records being read and written, so the merge can handle files much larger than RAM. The same approach extends to more files by repeatedly choosing the smallest next key.
+Now, when we are maintaining a sorted string table, we may not need to keep all the sorted indexes in memory.
 
-The labels “earlier” and “later” describe the writes. After compaction, one file may contain records from several batches. We can preserve their ordering by assigning each write an increasing sequence number and carrying it with the record through every rewrite. For matching account IDs, that number tells us which update wins. A file’s creation time cannot do that.
+Suppose we need key `205`, and as the file is sorted, we know the key `205` definitely comes between `101` and `310`. It jumps to byte `0` and scans only that small region:
 
-Sorted order also gives us a way to reduce the index. We can divide each table into blocks and record the first key and file position of each block. Suppose one block starts at `101` and the next at `310`. If `205` exists in this table, it must be in the first block. We binary-search the block index, read that block, and search within it. This is a **sparse index**: an entry can guide us to many records. [LevelDB’s table format](https://github.com/google/leveldb/blob/main/doc/table_format.md) likewise has one index entry per data block, using boundary keys to locate the block.
+```text
+101
+150
+205  ← found
+310
+```
+
+This is called a **sparse index** because it contains entries for selected keys rather than every key.
 
 <StorageStory story="sparse-index" />
 
-For completed tables, these smaller indexes can replace the global map of every account’s exact location. The tradeoff is that a lookup may now consult several files containing the same account ID. A range read similarly scans the relevant part of each table and merges the results, resolving duplicate IDs by write order. Recent writes must participate in those reads as well; for now, the active log can keep its own index.
-
-That leaves the write path. Deposits arrive in whatever order customers make them. We could reread and sort each closed log before producing its SSTable, but we already handle every update as it arrives. Keeping a bounded batch ordered in memory would let us write it out sequentially when it fills.
-
 ## Sort Live Writes in Memory
 
-An ordered map can hold the current batch of account records and return them in key order whenever we need to write a file. A balanced search tree gives us the operations we need: insert a new account, replace its value, look it up, and walk through the keys in order. This working batch is our **memtable**.
+Now our closed segments are sorted, and our life is so much easier, but the new upcoming writes will hardly come in a sorted order, rather in a random order. Inserting every incoming record into the middle of an existing file would reintroduce the random disk updates we were trying to avoid.
 
-Writes to accounts `310`, `101`, `205` and `150` can arrive in that order; walking the tree still yields `101`, `150`, `205`, `310`. Each entry holds the account record and its write sequence number. We keep the append log alongside it, but recent reads can now get their values from memory.
+So we clearly need somewhere to collect live writes and maintain them in sorted order before writing to the disk file. Let's think through the properties we need this structure to have, shall we?
 
-Suppose Priya’s ₹9,000 balance is in an SSTable. A ₹500 deposit puts `205 → ("Priya", 9500)` into the active memtable. Further changes to her account replace that entry with the latest value and sequence number. For the current-state reads we are building, the batch needs only its latest version of each account.
+It needs to support four operations:
 
-We give the memtable a memory budget, accounting for both records and the structure that holds them. When it reaches that budget, we freeze it and direct subsequent writes into a new memtable. The frozen one can be walked in key order to produce an SSTable, including its block index. Writing this batch to a new file is called **flushing**. The [RocksDB memtable documentation](https://github.com/facebook/rocksdb/wiki/MemTable) describes the same active-to-immutable handoff.
+- It can handle random-order incoming writes
+- Should be able to replace the current value with a new entry
+- Be able to find a recent key efficiently
+- Return every key in sorted order when it is time to write the file.
 
-Priya receives another ₹300 while that flush is running. The update belongs to the new active memtable, so her record can now appear in three places:
+What data structure comes to mind which can support all of these? You guessed it right: A balanced search tree, such as a <span style={{ color: '#b3413f' }}>**red**</span>-**black** tree or AVL tree, can provide these properties. And this in-memory sorted structure is what we call a **memtable**.
 
-```text
-Active memtable      205 → Priya, 9800
-Frozen memtable      205 → Priya, 9500   (being flushed)
-Existing SSTable     205 → Priya, 9000
-```
+Just like we’ve seen before when the memtable grows a lot we can freeze it so it will become an **immutable memtable**. Now the final thing the engine needs to do, is to walk through the memtable and write it to a new file and this is what we call **flushing the memtable**
+
+Point to remember: The engine does not insert records into an existing SSTable. It creates a complete new SSTable and then treats that file as immutable.
 
 <StorageStory story="memtable" />
 
-A lookup checks the active memtable first, then any frozen batches from most recent to oldest. Here it returns ₹9,800 immediately. If the account is absent from those batches, the lookup continues into the relevant SSTables, using sequence numbers to resolve versions across files. Range reads merge the ordered records from these sources.
-
-The frozen batch remains available to readers until its SSTable is complete and safely installed in the live file set. Reads already using the old batch must also finish before its memory is freed. Completing the flush of Priya’s ₹9,500 record changes where that version lives; it does not replace the ₹9,800 value in the active batch.
-
-If new batches fill faster than storage can flush them, frozen batches accumulate. We need a limit on that backlog and a way to slow or pause incoming writes when it is reached.
-
-Recent reads now use the memtable, and completed batches become sorted files without another pass over the log. The log still has an essential job: protecting the records that have not reached an installed SSTable.
-
 ## Protect Recent Writes with a WAL
 
-Priya’s ₹9,800 balance may still be in memory when the machine loses power. The SSTables alone cannot recover it yet. This is why we kept appending updates to the log while changing the structures used for reads. In this role, the append log is a **write-ahead log**, or **WAL**: a recovery record written before the update reaches its final table on disk.
+We’re getting closer, but there’s one important problem left.
 
-For this version, we apply writes in sequence order. Recording Priya’s update follows this path:
+But wait, what if we have the active memtable that contains the newest changes, and updates have not yet been flushed into an SSTable and the machine crashes do we lose all our data then?
 
-```text
-Append (sequence, 205, "Priya", 9800) to the WAL
-Sync the WAL successfully
-Apply the record to the active memtable
-Return success
-```
+Writing every small update directly into its final sorted disk location would destroy the batching advantage of the memtable. But appending to the end of a file is simple. Therefore, we create a recovery log for the current memtable: the **write-ahead log**, or **WAL**.
+
+But a file write can still sit in the operating system’s memory. Before confirming a durable update, we need a sync operation such as `fsync` to succeed.
 
 <StorageStory story="wal" />
 
-The sync is part of our durability promise. As we saw earlier, handing bytes to the operating system is insufficient for surviving a machine failure. Creating a new WAL also requires [making its directory entry durable](https://www.man7.org/linux/man-pages/man2/fsync.2.html). Several updates can share a sync, provided each waits for the operation covering its record before being acknowledged. [LevelDB’s synchronous-write documentation](https://github.com/google/leveldb/blob/main/doc/index.md#synchronous-writes) explains this distinction and how batching can spread the sync cost.
+Now, even when a crash destroys the memtable, the WAL remains on disk. During restart, the engine reads it from beginning to end and reapplies every entry.
 
-After a crash, recovery loads the recorded live SSTable set and replays the WALs still needed for unflushed batches. Their records rebuild the memtable in write order. Replaying Priya’s record installs the stored ₹9,800 balance; it does not run the ₹300 deposit again. We retain the recorded sequence numbers and resume numbering beyond the recovered write history.
+You might think: Why write the same data twice?
 
-The log needs enough structure to distinguish a whole record from a torn write. A stored length helps identify an incomplete record, and a checksum helps detect damage; [LevelDB’s log format](https://github.com/google/leveldb/blob/main/doc/log_format.md) includes both. An incomplete final record left by an interrupted append can be discarded. Damage to earlier history needs to be reported rather than silently treated as an unfinished last write.
+The writes serve different purposes:
 
-A crash after the sync but before the memtable update is recoverable through the same replay. It can also happen before the success response reaches the caller. A missing response therefore leaves the caller uncertain whether its update took effect. Retrying a deposit safely needs an application-level request identity or equivalent deduplication rule; recovering a stored balance alone does not provide that.
+- **WAL:** immediate and simple durability.
+- **Memtable:** mutable, sorted working state.
+- **SSTable:** durable, sorted long-term storage.
 
-We can pair each memtable with its own WAL and rotate them together: freeze batch A and its log, then begin batch B with a new log. A’s log remains available throughout its flush. [RocksDB’s WAL lifecycle](https://github.com/facebook/rocksdb/wiki/Write-Ahead-Log-%28WAL%29) makes the general retention rule explicit: a log stays necessary while it contains updates that still depend on it for recovery.
-
-Writing A’s SSTable is only the first step. We must make the file durable, including the filesystem work needed to preserve its name, then durably record its installation and the fact that A’s WAL is no longer needed. The manifest introduced earlier holds this recovery bookkeeping; [RocksDB’s manifest documentation](https://github.com/facebook/rocksdb/wiki/MANIFEST) describes how it records the live database state. Only after that handoff can we delete the old WAL.
-
-If the machine stops before the handoff is committed, recovery still has A’s log. If it stops afterwards, the recorded file set includes the completed SSTable. An obsolete WAL left behind by a crash can be cleaned up later. The ordering matters because deleting the log first could leave us with neither a usable table nor the records needed to rebuild one.
-
-We now write an update to the log promptly and place it in a sorted file later, together with the rest of its batch. Those writes pay for different things: the first allows a durable acknowledgement; the second gives subsequent reads an ordered layout.
-
-## Putting the Storage Engine Together
-
-Consider one more ₹200 deposit into Priya’s account. Her balance becomes ₹10,000. The engine assigns the update a sequence number, appends the full record to the WAL and syncs it. It then updates the memtable and confirms the write. A read can return the new balance while its eventual SSTable is still some time away.
-
-When the batch fills, it becomes immutable and a fresh batch takes over. Flushing writes the ₹10,000 record in account-ID order alongside the other records in that batch. Once the new table is durable and registered, the batch’s recovery log can be retired. Later compaction merges that table with others and removes superseded versions that the engine no longer needs to retain. The sequence number keeps the deposit’s place in the history even as its file and offset change.
+The WAL lets the engine safely acknowledge individual updates. The memtable then batches many updates into one sequential SSTable write.
 
 <StorageStory story="lifecycle" />
 
-This is the core of a **Log-Structured Merge-tree**, usually shortened to **LSM-tree**. Updates accumulate in memory, become sorted files in batches, and are consolidated through merging. The WAL makes the time between accepting an update and flushing its batch recoverable.
-
-As the database grows, choosing which files to merge becomes a substantial part of the design. One common approach is **leveled compaction**. Newly flushed tables enter level 0, where their key ranges can overlap. Compaction merges selected files with overlapping ranges in a deeper level. Within each level below level 0, the files cover non-overlapping key ranges, allowing a lookup to narrow its search by range. [RocksDB’s leveled-compaction guide](https://github.com/facebook/rocksdb/wiki/Leveled-Compaction) illustrates this organization.
-
-Those levels group SSTables for searching and compaction. In the layout described here, the memtables live in RAM; the WAL and SSTables at every level live on durable storage.
-
-There is a cost to maintaining this arrangement. An update can be written to the WAL, written again during a flush, and rewritten during several compactions. That extra disk traffic is **write amplification**. Keeping more files around can reduce some immediate merging work, while making reads examine more places and allowing obsolete versions to consume space. The compaction policy decides how to spend that work.
-
-Our example has focused on storing and retrieving current account records. Deletion adds another requirement: a marker must hide older versions until they can be safely removed. Snapshot reads require retaining versions that an older reader can still observe. A complete payments database also needs rules for transactions and concurrent account updates. These build on the storage design we have worked through.
-
-The first version of the service lost an account during a routine restart. In this design, an acknowledged update has a recovery path through the WAL while its batch is in memory, then through a registered SSTable after the flush. We can move and reorganize the record without changing the balance the application sees.
+Congratulations! If you’ve come this far, We’ve made ourselves a **Log-Structured Merge-tree storage engine.** Production LSM engines have more tricks to handle all the different edge cases and quirks, like: tombstones, Bloom filters, caches, checksums, compression, multiple levels, and different compaction strategies which are beyond this first principle simpler derivation. Those are refinements built on top of the core design derived here, and maybe we can discuss them in a new post later

@@ -13,7 +13,7 @@ const story: {
 ---
 
 <figure class="storage-story" data-storage-story={id} data-story={JSON.stringify(story)}>
-  <div class="scene">
+  <div class="scene technical-figure-scene">
     <div class="stage" data-stage aria-label={story.title}>
       {
         story.steps[0].panes.map((pane) => (
@@ -34,7 +34,6 @@ const story: {
     </div>
     <div class="controls" data-controls hidden>
       <button type="button" data-play aria-pressed="false">Play</button>
-      <button type="button" data-next>Next →</button>
     </div>
     <p class="status" role="status" aria-live="polite" data-status>{story.steps[0].message}</p>
   </div>
@@ -44,6 +43,7 @@ const story: {
 <script>
   import { reserveSpace } from './figure-space.mjs';
   import { bindPlayback } from './figure-playback.mjs';
+  import { createMotionPlayer } from './figure-motion.mjs';
   type Pane = { id: string; title: string; kind: string; rows: string[]; note: string };
   type Step = {
     message: string;
@@ -58,23 +58,8 @@ const story: {
     const stage = figure.querySelector<HTMLElement>('[data-stage]')!;
     const transfer = figure.querySelector<HTMLElement>('[data-transfer]')!;
     const status = figure.querySelector<HTMLElement>('[data-status]')!;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const play = createMotionPlayer(matchMedia('(prefers-reduced-motion: reduce)'));
     let current = 0;
-    async function play(element: HTMLElement, frames: Keyframe[], duration: number, motion = true) {
-      const animation = element.animate(frames, {
-        duration: motion && reduced.matches ? 0 : duration,
-        easing: 'cubic-bezier(.4,0,.2,1)',
-        fill: 'forwards',
-      });
-      try {
-        await animation.finished;
-        return true;
-      } catch {
-        return false;
-      } finally {
-        animation.cancel();
-      }
-    }
     function render() {
       const step = story.steps[current];
       for (const pane of step.panes) {
@@ -188,18 +173,6 @@ const story: {
 <style>
   .storage-story {
     margin: var(--space-7) 0;
-  }
-  .scene {
-    --ink: #ede9df;
-    --muted: #a8b9b3;
-    --accent: #a9cbb9;
-    --rule: #4b6058;
-    background: #202727;
-    color: var(--ink);
-    padding: clamp(16px, 4vw, 32px);
-    font:
-      13px 'Helvetica Neue',
-      sans-serif;
   }
   .stage {
     position: relative;

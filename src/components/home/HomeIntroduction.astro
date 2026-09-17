@@ -8,4 +8,42 @@ import PageIntroduction from '../journal/PageIntroduction.astro';
   lede="And share the tools I’m building to make it better."
   scale="display"
   measure="wide"
-/>
+>
+  <div slot="aside" class="home-work-note">
+    <p class="home-work-note__label">Currently building</p>
+    <h2>Zero</h2>
+    <p>
+      LLMs can now generate code at scale. But how do we know it works? That’s the question behind
+      Zero.
+    </p>
+  </div>
+</PageIntroduction>
+
+<style>
+  .home-work-note {
+    padding-top: var(--space-4);
+    border-top: var(--border-thin) solid var(--color-rule-strong);
+  }
+
+  .home-work-note__label {
+    margin: 0 0 var(--space-3);
+    color: var(--color-accent);
+    font-family: var(--font-interface);
+    font-size: var(--font-size-label);
+    letter-spacing: 0.06em;
+  }
+
+  h2 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-heading-2);
+    font-weight: var(--weight-regular);
+    letter-spacing: -0.035em;
+  }
+
+  .home-work-note > p:last-child {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    line-height: var(--line-height-reading);
+  }
+</style>

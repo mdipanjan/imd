@@ -3,7 +3,7 @@ import { initialRecords, locateRecords } from './offset-index.mjs';
 ---
 
 <figure class="offset-demo" data-offset-demo>
-  <div class="scene">
+  <div class="scene technical-figure-scene">
     <div class="composition" data-composition>
       <div class="index-side">
         <div class="location-label">RAM</div>
@@ -50,7 +50,6 @@ import { initialRecords, locateRecords } from './offset-index.mjs';
     </div>
     <div class="controls" data-controls hidden>
       <button type="button" data-play aria-pressed="false">Play</button>
-      <button type="button" data-next>Next →</button>
     </div>
     <p class="status" data-status role="status" aria-live="polite">
       Account 101 points to byte 60, where Maya’s balance is ₹6,000.
@@ -285,18 +284,6 @@ import { initialRecords, locateRecords } from './offset-index.mjs';
 <style>
   .offset-demo {
     margin: var(--space-7) 0;
-  }
-  .scene {
-    --ink: #ede9df;
-    --muted: #a8b9b3;
-    --accent: #a9cbb9;
-    --rule: #4b6058;
-    background: #202727;
-    color: var(--ink);
-    padding: clamp(16px, 4vw, 32px);
-    font:
-      13px 'Helvetica Neue',
-      sans-serif;
   }
   .composition {
     position: relative;

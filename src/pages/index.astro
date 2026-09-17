@@ -1,77 +1,44 @@
 ---
 import { getCollection } from 'astro:content';
-import CurrentFocus from '../components/home/CurrentFocus.astro';
 import FeaturedPost from '../components/home/FeaturedPost.astro';
 import HomeIntroduction from '../components/home/HomeIntroduction.astro';
 import PostIndex from '../components/home/PostIndex.astro';
 import HomeLayout from '../layouts/HomeLayout.astro';
 import { toPostView } from '../lib/post-view';
+import { POSTS_PER_PAGE, selectPosts } from '../lib/posts.mjs';
+import { site } from '../lib/site';
 
-const POSTS_PER_PAGE = 8;
 const includeDrafts = import.meta.env.DEV;
 
-const posts = (await getCollection('posts'))
-  .filter((post) => !post.data.draft || includeDrafts)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const posts = selectPosts(await getCollection('posts'), { includeDrafts });
 const postViews = posts.map(toPostView);
-
-const currentFocus = [
-  { label: 'Writing', value: 'An LSM tree from first principles' },
-  { label: 'Building', value: 'Quill: a verifier prototype' },
-  { label: 'Exploring', value: 'Deterministic simulation testing' },
-];
 ---
 
-<HomeLayout description="How software works, and the tools I’m building to make it better.">
+<HomeLayout description={site.description}>
   <HomeIntroduction />
-  <div class="journal-body">
-    <div class="journal-feed">
-      <FeaturedPost post={postViews[0]} />
-      {
-        postViews.length > 1 && (
-          <PostIndex
-            posts={postViews.slice(1, POSTS_PER_PAGE)}
-            total={postViews.filter((post) => !post.draft).length}
-          />
-        )
-      }
-    </div>
-    <CurrentFocus items={currentFocus} />
+  <div class="journal-feed">
+    <FeaturedPost post={postViews[0]} />
+    {
+      postViews.length > 1 && (
+        <PostIndex
+          posts={postViews.slice(1, POSTS_PER_PAGE)}
+          total={postViews.filter((post) => !post.draft).length}
+        />
+      )
+    }
   </div>
 </HomeLayout>
 
 <style>
-  .journal-body {
-    display: grid;
-    grid-template-columns: var(--width-index-rail) minmax(0, 1fr);
-  }
-
-  .journal-body > :global(.page-rail) {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
   .journal-feed {
-    grid-column: 2;
-    grid-row: 1;
-    min-width: 0;
-    padding: var(--space-7) 0 var(--space-8) clamp(var(--space-6), 4vw, var(--space-8));
-    padding-right: var(--journal-edge-inset);
+    max-width: var(--width-prose);
+    margin-left: var(--width-index-rail);
+    padding: var(--space-7) var(--journal-edge-inset) var(--space-8) 0;
   }
 
   @media (max-width: 900px) {
-    .journal-body {
-      grid-template-columns: 1fr;
-    }
-
-    .journal-body > :global(.page-rail) {
-      grid-column: 1;
-      grid-row: 2;
-    }
-
     .journal-feed {
-      grid-column: 1;
-      grid-row: 1;
+      margin-left: 0;
       padding-inline: var(--journal-edge-inset);
     }
   }

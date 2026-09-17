@@ -4,27 +4,35 @@ import test from 'node:test';
 
 const readSource = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('the landing page composes the approved journal sections from reusable components', async () => {
+test('the landing page features published writing without placeholder projects', async () => {
   const home = await readSource('src/pages/index.astro');
   const layout = await readSource('src/layouts/HomeLayout.astro');
+  const article = await readSource(
+    'src/content/posts/2026-09-09-building-an-lsm-tree-from-first-principles.mdx',
+  );
 
-  for (const component of ['HomeIntroduction', 'CurrentFocus', 'FeaturedPost', 'PostIndex']) {
+  for (const component of ['HomeIntroduction', 'FeaturedPost', 'PostIndex']) {
     assert.match(home, new RegExp(`import ${component} from`));
     assert.match(home, new RegExp(`<${component}`));
   }
 
   assert.match(home, /postViews\.slice\(1, POSTS_PER_PAGE\)/);
+  assert.doesNotMatch(home, /CurrentFocus|currentFocus|Quill|Deterministic simulation/);
+  assert.match(article, /draft: false/);
+  await assert.rejects(readSource('src/content/posts/2026-04-28-first-thought.md'), {
+    code: 'ENOENT',
+  });
   assert.match(layout, /<JournalLayout/);
 });
 
-test('the landing rails keep text away from both outer canvas edges', async () => {
+test('the landing article has a comfortable reading measure at every width', async () => {
   const home = await readSource('src/pages/index.astro');
   const layout = await readSource('src/layouts/HomeLayout.astro');
-  const focus = await readSource('src/components/home/CurrentFocus.astro');
 
   assert.match(layout, /pageClass="home-page"/);
-  assert.match(focus, /<PageRail/);
-  assert.match(home, /padding-right: var\(--journal-edge-inset\)/);
+  assert.match(home, /margin-left: var\(--width-index-rail\)/);
+  assert.match(home, /max-width: var\(--width-prose\)/);
+  assert.match(home, /@media \(max-width: 900px\)/);
 });
 
 test('featured post taxonomy uses readable theme-coloured labels', async () => {
@@ -46,6 +54,19 @@ test('the article layout composes a left index, reading canvas, and annotation r
   assert.match(layout, /class:list=\{\{ 'article-layout': true/);
   assert.match(layout, /class="article-reading"/);
   assert.match(layout, /<slot \/>/);
+});
+
+test('the LSM article uses a direct title and a cover at the same reading measure as its figures', async () => {
+  const article = await readSource(
+    'src/content/posts/2026-09-09-building-an-lsm-tree-from-first-principles.mdx',
+  );
+  const about = await readSource('src/pages/about.astro');
+  const layout = await readSource('src/layouts/ArticleLayout.astro');
+
+  assert.match(article, /title: 'How to Build an LSM Tree'/);
+  assert.match(about, /How to Build an LSM Tree/);
+  assert.match(layout, /\.article-cover\s*\{[^}]*max-width:\s*var\(--width-prose\)/s);
+  assert.match(layout, /\.article-cover\s*\{[^}]*margin-inline:\s*auto/s);
 });
 
 test('the article route uses the production ArticleLayout', async () => {
@@ -103,12 +124,9 @@ test('code blocks use a light syntax theme within the journal canvas', async () 
 });
 
 test('inline sub-note markers reveal their matching right-rail annotation', async () => {
-  const post = await readSource('src/content/posts/2026-04-28-first-thought.md');
   const layout = await readSource('src/layouts/ArticleLayout.astro');
   const rail = await readSource('src/components/article/AnnotationRail.astro');
 
-  assert.match(post, /data-annotation-trigger="reading-measure"/);
-  assert.match(post, /aria-controls="annotation-reading-measure"/);
   assert.match(rail, /data-annotation-note=\{annotation\.anchor\}/);
   assert.match(rail, /class="annotation-note"/);
   assert.match(rail, /\.annotation-note\.is-active/);

@@ -61,12 +61,12 @@ test('the production document declares Paper and Field as reviewable defaults', 
 test('layout tokens name the reading canvas and its supporting rails', async () => {
   const layout = await readStyle('layout');
 
-  for (const token of ['site', 'prose', 'figure', 'index-rail', 'annotation-rail']) {
+  for (const token of ['site', 'prose', 'index-rail', 'annotation-rail']) {
     assert.match(layout, new RegExp(`--width-${token}:`));
   }
 
   assert.match(layout, /--page-gutter:/);
-  assert.match(layout, /--page-edge: 4rem/);
+  assert.doesNotMatch(layout, /--width-figure:|--page-edge:/);
 });
 
 test('production rules consume semantic colour, type, and layout tokens', async () => {

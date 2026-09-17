@@ -1,0 +1,19 @@
+/* Shared canvas and palette for the interactive storage-engine figures. */
+.technical-figure-scene {
+  --ink: #ede9df;
+  --muted: #a8b9b3;
+  --accent: #a9cbb9;
+  --rule: #4b6058;
+  --memory-bg: #202727;
+  --memory-surface: #293332;
+  --memory-ink: var(--ink);
+  --memory-muted: var(--muted);
+  --memory-accent: var(--accent);
+  --memory-rule: var(--rule);
+
+  padding: clamp(16px, 4vw, 32px);
+  background: #202727;
+  color: var(--ink);
+  font-family: 'Helvetica Neue', sans-serif;
+  font-size: 13px;
+}

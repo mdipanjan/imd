@@ -3,10 +3,9 @@ import { getCollection } from 'astro:content';
 import ArchiveIndex from '../components/archive/ArchiveIndex.astro';
 import InteriorPageLayout from '../layouts/InteriorPageLayout.astro';
 import { toPostView } from '../lib/post-view';
+import { selectPosts } from '../lib/posts.mjs';
 
-const posts = (await getCollection('posts'))
-  .filter((post) => !post.data.draft)
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const posts = selectPosts(await getCollection('posts'));
 
 const postViews = posts.map(toPostView);
 const years = [...new Set(postViews.map((post) => post.date.getFullYear()))];

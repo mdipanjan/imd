@@ -5,6 +5,7 @@ type Props = {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   type?: 'website' | 'article';
   publishedTime?: Date;
   modifiedTime?: Date;
@@ -15,6 +16,7 @@ const {
   title: pageTitle,
   description = site.description,
   image = '/favicon.svg',
+  imageAlt,
   type = 'website',
   publishedTime,
   modifiedTime,
@@ -42,12 +44,14 @@ const imageUrl = new URL(image, site.url).toString();
 <meta property="og:type" content={type} />
 <meta property="og:url" content={canonical} />
 <meta property="og:image" content={imageUrl} />
+{imageAlt && <meta property="og:image:alt" content={imageAlt} />}
 <meta property="og:locale" content={site.locale} />
 
-<meta name="twitter:card" content="summary" />
+<meta name="twitter:card" content={Astro.props.image ? 'summary_large_image' : 'summary'} />
 <meta name="twitter:title" content={title} />
 <meta name="twitter:description" content={description} />
 <meta name="twitter:image" content={imageUrl} />
+{imageAlt && <meta name="twitter:image:alt" content={imageAlt} />}
 
 {publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
 {modifiedTime && <meta property="article:modified_time" content={modifiedTime.toISOString()} />}

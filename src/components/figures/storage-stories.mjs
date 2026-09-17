@@ -1,7 +1,11 @@
 const pane = (id, title, kind, rows, note = '') => ({ id, title, kind, rows, note });
 const state = (message, panes, transfer = null) => ({ message, panes, transfer });
 const move = (from, row, to, label) => ({ from, row, to, label });
-const segmentInputs = ['101 · Maya · 5000', '101 · Maya · 6000', '101 · Maya · 6500'];
+const segmentInputs = [
+  '01 · 101 · Maya · 5000',
+  '01 · 101 · Maya · 6000',
+  '02 · 101 · Maya · 6500',
+];
 const mergeA = ['101 · Maya · 6500', '205 · Priya · 8000', '310 · Rahul · 2000'];
 const mergeB = ['101 · Maya · 7000', '150 · Ananya · 4000', '205 · Priya · 9000'];
 const merged = [
@@ -14,12 +18,12 @@ const merged = [
 const segmentPanes = (output, active = [], note = 'writing', retired = false) => [
   pane(
     'closed',
-    'Closed segments',
+    'segment-01 + segment-02',
     'file',
     retired ? [] : segmentInputs,
-    retired ? 'retired after reader handoff' : 'immutable inputs · Maya’s versions',
+    retired ? 'retired after reader handoff' : 'closed files · Maya’s versions',
   ),
-  pane('output', 'Compacted copy', 'file', output, note),
+  pane('output', 'Merged + compacted file', 'file', output, note),
   pane(
     'active',
     'Active segment',
@@ -52,7 +56,7 @@ const memPanes = (active, frozen, table, note) => [
 const walPanes = (wal, ram, note) => [
   pane('wal', 'Write-ahead log', 'file', wal, note),
   pane('ram', 'Active memtable', 'memory', ram, 'RAM'),
-  pane('disk', 'Installed SSTable', 'table', ['205 · Priya · 9000'], 'older durable balance'),
+  pane('disk', 'Installed SSTable', 'table', ['205 · Priya · 9500'], 'previous flush · durable'),
 ];
 const handoffPanes = (table, note, wal = true, frozen = true, registered = false) => [
   pane(
@@ -146,6 +150,7 @@ export const stories = {
         pane('index', 'Block index', 'index', ['101 → block A', '310 → block B']),
         pane('block', 'Block A', 'table', merged.slice(0, 3), 'not read yet'),
         pane('result', 'Lookup 205', 'result', []),
+        pane('block-b', 'Block B', 'table', merged.slice(3), 'not read · outside the lookup range'),
       ]),
       state(
         '205 lies between boundary keys 101 and 310, so read block A.',
@@ -153,6 +158,13 @@ export const stories = {
           pane('index', 'Block index', 'index', ['101 → block A', '310 → block B']),
           pane('block', 'Block A', 'table', merged.slice(0, 3), 'candidate block selected'),
           pane('result', 'Lookup 205', 'result', []),
+          pane(
+            'block-b',
+            'Block B',
+            'table',
+            merged.slice(3),
+            'not read · outside the lookup range',
+          ),
         ],
         move('index', 0, 'block', 'read block A'),
       ),
@@ -167,6 +179,13 @@ export const stories = {
             'result',
             ['205 · Priya · 9000'],
             'one candidate block read',
+          ),
+          pane(
+            'block-b',
+            'Block B',
+            'table',
+            merged.slice(3),
+            'not read · outside the lookup range',
           ),
         ],
         move('block', 2, 'result', '205 · Priya · 9000'),
@@ -230,10 +249,10 @@ export const stories = {
   wal: {
     title: 'Recover an acknowledged update',
     caption:
-      'Revisiting the 9800 write before the previous figure’s flush. Earlier WAL records are omitted. Sync is simulated; replay restores the stored balance without repeating the deposit.',
+      'Revisiting the 9800 write with the previous 9500 balance safely flushed. Earlier WAL records are omitted. Sync is simulated; replay restores the stored balance without repeating the deposit.',
     steps: [
       state(
-        'Revisit the 9800 write before its flush. The older installed table holds 9000; earlier WAL history is omitted.',
+        'Revisit the 9800 write before its flush. The previous flush holds 9500; earlier WAL history is omitted.',
         walPanes([], [], 'ready to append'),
       ),
       state(

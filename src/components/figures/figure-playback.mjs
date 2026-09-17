@@ -30,12 +30,6 @@ export function createPlayback({
     if (!paused) arm(timer);
     return timer;
   }
-  function clearPending() {
-    if (!pending) return;
-    cancel(pending.id);
-    timers.delete(pending);
-    pending = null;
-  }
   function resume() {
     if (!paused) return;
     paused = false;
@@ -80,21 +74,12 @@ export function createPlayback({
     if (!busy && !pending) void advance();
     notify();
   }
-  function next() {
-    if (ended()) return;
-    automatic = false;
-    clearPending();
-    resume();
-    if (!busy) void advance();
-    notify();
-  }
   notify();
-  return { later, toggle, next, pause };
+  return { later, toggle, pause };
 }
 
 export function bindPlayback(figure, steps, reset) {
   const play = figure.querySelector('[data-play]');
-  const next = figure.querySelector('[data-next]');
   const playback = createPlayback({
     steps,
     reset,
@@ -102,11 +87,9 @@ export function bindPlayback(figure, steps, reset) {
     changed: ({ playing, ended }) => {
       play.textContent = playing ? 'Pause' : ended ? 'Replay' : 'Play';
       play.setAttribute('aria-pressed', String(playing));
-      next.disabled = ended;
     },
   });
   play.addEventListener('click', playback.toggle);
-  next.addEventListener('click', playback.next);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) playback.pause();
   });

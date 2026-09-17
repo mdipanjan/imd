@@ -9,6 +9,14 @@ const posts = defineCollection({
     description: z.string(),
     date: z.date(),
     updated: z.date().optional(),
+    cover: z
+      .object({
+        src: z.string(),
+        alt: z.string(),
+        width: z.number().positive(),
+        height: z.number().positive(),
+      })
+      .optional(),
     tags: z.array(z.string()).default([]),
     annotations: z
       .array(

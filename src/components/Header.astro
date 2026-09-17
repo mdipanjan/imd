@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import ReadingPreferences from './ReadingPreferences.astro';
+import { postHref, selectPosts } from '../lib/posts.mjs';
 
 type Props = {
   variant?: 'journal' | 'article';
@@ -10,19 +11,13 @@ const { variant = 'journal' } = Astro.props;
 const isArticle = variant === 'article';
 const includeDrafts = import.meta.env.DEV;
 
-const latestPost = (await getCollection('posts', ({ data }) => !data.draft || includeDrafts)).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-)[0];
+const latestPost = selectPosts(await getCollection('posts'), { includeDrafts })[0];
 
 const sharedNav = [
   { href: '/', label: 'Index' },
-  { href: latestPost ? `/posts/${latestPost.id}/` : '/archive/', label: 'Latest note' },
+  { href: latestPost ? postHref(latestPost) : '/archive/', label: 'Latest note' },
+  { href: '/about/', label: 'About' },
 ];
-
-const journalNav = [...sharedNav, { href: '/about/', label: 'About' }];
-const articleNav = [...sharedNav, { href: '/archive/', label: 'Revisions' }];
-
-const nav = isArticle ? articleNav : journalNav;
 
 const currentPath = Astro.url.pathname;
 const isCurrent = (href: string) =>
@@ -37,7 +32,7 @@ const isCurrent = (href: string) =>
     {!isArticle && <p class="site-statement">An editable record of what I understand.</p>}
     <nav class="site-nav" aria-label="Primary navigation">
       {
-        nav.map((item) => (
+        sharedNav.map((item) => (
           <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
             {item.label}
           </a>
@@ -48,7 +43,7 @@ const isCurrent = (href: string) =>
       <summary aria-label="Navigation menu">Menu</summary>
       <nav aria-label="Compact navigation">
         {
-          nav.map((item) => (
+          sharedNav.map((item) => (
             <a href={item.href} aria-current={isCurrent(item.href) ? 'page' : undefined}>
               {item.label}
             </a>

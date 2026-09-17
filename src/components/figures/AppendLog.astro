@@ -3,7 +3,7 @@ import { initialLog } from './append-log.mjs';
 ---
 
 <figure class="append-demo" data-append-demo>
-  <div class="scene">
+  <div class="scene technical-figure-scene">
     <div class="composition">
       <div class="write-packet" data-write-packet hidden aria-hidden="true"></div>
       <div class="file">
@@ -36,7 +36,6 @@ import { initialLog } from './append-log.mjs';
     </div>
     <div class="controls" data-controls hidden>
       <button type="button" data-play aria-pressed="false">Play</button>
-      <button type="button" data-next>Next →</button>
     </div>
     <p class="status" data-status role="status" aria-live="polite">
       Three records. Maya’s starting balance is ₹5,000.
@@ -44,7 +43,7 @@ import { initialLog } from './append-log.mjs';
   </div>
   <figcaption>
     Append a deposit, then read the log. The first matching record can be stale; the scan must reach
-    the end. Play follows the sequence; Next advances one operation.
+    the end. Play follows the sequence; Pause holds the current moment.
   </figcaption>
   <noscript
     ><p>
@@ -193,18 +192,6 @@ import { initialLog } from './append-log.mjs';
 <style>
   .append-demo {
     margin: var(--space-7) 0;
-  }
-  .scene {
-    --ink: #ede9df;
-    --muted: #a8b9b3;
-    --accent: #a9cbb9;
-    --rule: #4b6058;
-    color: var(--ink);
-    background: #202727;
-    padding: clamp(16px, 4vw, 32px);
-    font:
-      13px 'Helvetica Neue',
-      sans-serif;
   }
   .write-packet {
     position: absolute;

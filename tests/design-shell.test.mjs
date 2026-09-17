@@ -12,7 +12,8 @@ test('the header preserves the approved quiet Hybrid Journal composition', async
   assert.match(header, /An editable record of what I understand/);
   assert.match(header, /Dipanjan’s working notes/);
   assert.match(header, /Latest note/);
-  assert.match(header, /Revisions/);
+  assert.match(header, /\{ href: '\/about\/', label: 'About' \}/);
+  assert.doesNotMatch(header, /Revisions/);
   assert.match(header, /ReadingPreferences/);
   assert.match(header, /aria-current/);
   assert.doesNotMatch(header, /site-brand__mark/);
@@ -20,13 +21,26 @@ test('the header preserves the approved quiet Hybrid Journal composition', async
   assert.match(styles, /\.site-header__inner \{[\s\S]*padding-inline: var\(--space-5\)/);
 });
 
-test('the home page composes the Hybrid Journal landing sections', async () => {
+test('the home page retains the journal introduction and article list', async () => {
   const home = await readSource('src/pages/index.astro');
 
   assert.match(home, /HomeIntroduction/);
-  assert.match(home, /CurrentFocus/);
   assert.match(home, /FeaturedPost/);
   assert.match(home, /PostIndex/);
+  assert.doesNotMatch(home, /CurrentFocus/);
+});
+
+test('the home introduction gives current work a quiet right-side note', async () => {
+  const homeIntroduction = await readSource('src/components/home/HomeIntroduction.astro');
+  const pageIntroduction = await readSource('src/components/journal/PageIntroduction.astro');
+
+  assert.match(homeIntroduction, /slot="aside"/);
+  assert.match(homeIntroduction, /Zero/);
+  assert.match(homeIntroduction, /LLMs can now generate code at scale/);
+  assert.match(homeIntroduction, /how do we know it works/);
+  assert.doesNotMatch(homeIntroduction, /deterministic simulation testing/);
+  assert.match(pageIntroduction, /Astro\.slots\.has\('aside'\)/);
+  assert.match(pageIntroduction, /page-introduction--with-aside/);
 });
 
 test('the footer closes the journal with compact navigation and quiet metadata', async () => {

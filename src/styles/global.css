@@ -2,6 +2,7 @@
 @import './themes.css';
 @import './typography.css';
 @import './layout.css';
+@import './figures.css';
 
 /* Production component rules consume the semantic contracts imported above. */
 
@@ -472,7 +473,6 @@ main > h1 ~ :not(.archive-list) {
 @media (max-width: 520px) {
   :root {
     --page-gutter: 1.15rem;
-    --page-edge: 1.5rem;
   }
 
   html {

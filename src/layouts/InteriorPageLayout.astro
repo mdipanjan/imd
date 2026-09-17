@@ -8,26 +8,37 @@ type Props = {
   description: string;
   eyebrow: string;
   lede: string;
-  contentFirst?: boolean;
-  rail: {
+  rail?: {
     title: string;
     items: PageRailItem[];
     note?: string;
   };
 };
 
-const { title, description, eyebrow, lede, rail, contentFirst = false } = Astro.props;
+const { title, description, eyebrow, lede, rail } = Astro.props;
+const prose = !rail;
 ---
 
 <JournalLayout {title} {description} pageClass="interior-page">
-  <PageIntroduction eyebrow={eyebrow} title={title} lede={lede} />
+  <PageIntroduction
+    eyebrow={eyebrow}
+    title={title}
+    lede={lede}
+    layout={prose ? 'prose' : 'split'}
+  />
   <div
     class="interior-page__body"
-    class:list={{ 'interior-page__body--content-first': contentFirst }}
+    class:list={{
+      'interior-page__body--prose': prose,
+    }}
   >
-    <PageRail title={rail.title} items={rail.items} note={rail.note}>
-      <slot name="rail" />
-    </PageRail>
+    {
+      rail && (
+        <PageRail title={rail.title} items={rail.items} note={rail.note}>
+          <slot name="rail" />
+        </PageRail>
+      )
+    }
     <div class="interior-page__content">
       <slot />
     </div>
@@ -46,13 +57,19 @@ const { title, description, eyebrow, lede, rail, contentFirst = false } = Astro.
       clamp(var(--space-6), 4vw, var(--space-8));
   }
 
+  .interior-page__body--prose {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .interior-page__body--prose .interior-page__content {
+    width: min(var(--width-prose), calc(100% - 2 * var(--journal-edge-inset)));
+    margin-inline: auto;
+    padding: var(--space-6) 0 var(--space-8);
+  }
+
   @media (max-width: 900px) {
     .interior-page__body {
       grid-template-columns: 1fr;
-    }
-
-    .interior-page__body--content-first .interior-page__content {
-      grid-row: 1;
     }
 
     .interior-page__content {
